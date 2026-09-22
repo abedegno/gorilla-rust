@@ -1,0 +1,28 @@
+# Configuration for cargo-mutants, which the weekly Mutation testing
+# workflow runs. It changes the code one small way at a time (flipping a
+# comparison, replacing a return value) and reports each change the tests
+# did not notice.
+#
+# Only code that no test can observe is left out: it needs a window, a
+# sound card or a person, and is checked by playing the game. Everything
+# else is in, including the parts known to be weakly pinned, so that their
+# survivors stay visible.
+
+exclude_globs = [
+    # Argument parsing and opening the window.
+    "src/main.rs",
+    # A development tool for rendering screens to files.
+    "examples/**",
+]
+
+exclude_re = [
+    # Opening the window and reading its keyboard need a display.
+    "Qb::windowed",
+    "Display::",
+    "key_to_char",
+    "shift_char",
+    # Sound needs an audio device, and CI runners have none.
+    "Audio::new",
+    "Audio::play",
+    "SquareWave",
+]

@@ -60,6 +60,21 @@ expression can be typed twice. Call the real function.
 The quickest way to check either is to break the code on purpose and confirm
 the test fails. If it passes, the test is decoration.
 
+## Mutation testing
+
+Once a week CI runs [cargo-mutants](https://mutants.rs), which changes the
+code one small way at a time and reports every change the tests did not
+notice. The list of survivors is in that run's summary. To run it locally:
+
+```sh
+cargo install cargo-mutants
+cargo mutants
+```
+
+A survivor means either a missing test or a change that genuinely makes
+no difference. Both are worth knowing; `.cargo/mutants.toml` lists the
+code left out and why.
+
 ## Routines that block
 
 Several routines clear the keyboard buffer and then wait for a key, exactly

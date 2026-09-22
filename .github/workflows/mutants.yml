@@ -1,0 +1,95 @@
+name: Mutation testing
+
+# Each week, change the code one small way at a time and report every
+# change the test suite fails to notice. This is informational: survivors
+# are listed in the run's summary rather than failing anything, because
+# some are known and accepted (see reference/NOTES.md). A run that breaks
+# for any other reason still fails.
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  mutants:
+    name: Shard ${{ matrix.shard }} of 4
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxkbcommon-dev libasound2-dev
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-mutants
+
+      # Exit code 2 means some mutants survived and 3 means some timed out;
+      # both are results to report, not failures of the run.
+      - name: Run cargo-mutants
+        run: |
+          set +e
+          cargo mutants --in-place --no-shuffle --shard ${{ matrix.shard }}/4
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ] && [ "$code" -ne 2 ] && [ "$code" -ne 3 ]; then
+            echo "::error::cargo-mutants exited with $code"
+            exit "$code"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: mutants-shard-${{ matrix.shard }}
+          path: mutants.out
+          if-no-files-found: ignore
+
+  summary:
+    name: Summary
+    needs: mutants
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: mutants-shard-*
+          path: shards
+
+      - name: Write the summary
+        run: |
+          count() { cat shards/*/"$1" 2>/dev/null | grep -c . || true; }
+          {
+            echo "## Mutation testing"
+            echo
+            echo "| outcome | mutants |"
+            echo "|---|---|"
+            echo "| caught | $(count caught.txt) |"
+            echo "| **missed** | $(count missed.txt) |"
+            echo "| timed out | $(count timeout.txt) |"
+            echo "| unviable | $(count unviable.txt) |"
+            echo
+            if [ "$(count missed.txt)" -gt 0 ]; then
+              echo "### Missed: changes no test noticed"
+              echo
+              echo '```'
+              cat shards/*/missed.txt | sort
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
