@@ -1,0 +1,7 @@
+SCREEN 9
+FOR y = 0 TO 349
+LINE (0, y)-(639, y), (y MOD 15) + 1
+NEXT y
+DO
+LOOP UNTIL INKEY$ <> ""
+SYSTEM

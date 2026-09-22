@@ -1,0 +1,35 @@
+name: Fidelity difference
+description: The port draws or behaves differently from the original
+labels: [fidelity]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        These are the reports this project cares about most. A capture from
+        the original is worth a great deal — see CONTRIBUTING.md for how to
+        take one.
+
+  - type: textarea
+    id: difference
+    attributes:
+      label: What differs
+      description: What does the original do, and what does this do instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: >
+        A screenshot of each, or a framebuffer capture, or the lines of
+        GORILLAS.BAS involved.
+    validations:
+      required: true
+
+  - type: input
+    id: routine
+    attributes:
+      label: Which routine
+      description: The BASIC SUB or FUNCTION, if you know it
+      placeholder: PlotShot

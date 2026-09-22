@@ -1,0 +1,26 @@
+SCREEN 9
+DIM Ban&(8)
+FOR i = 0 TO 8
+READ Ban&(i)
+NEXT i
+DATA 458758,202116096,471604224,943208448,943208448,943208448,471604224,202116096,0
+REM PUT at fractional positions: .4 .5 .6 .75 in x, fixed y
+PUT (100.4, 40), Ban&, PSET
+PUT (150.5, 40), Ban&, PSET
+PUT (200.6, 40), Ban&, PSET
+PUT (250.75, 40), Ban&, PSET
+PUT (300, 80.4), Ban&, PSET
+PUT (350, 80.5), Ban&, PSET
+PUT (400, 80.6), Ban&, PSET
+PUT (450, 80.75), Ban&, PSET
+REM POINT rounding: a single lit pixel, sampled at fractional offsets
+PSET (500, 200), 15
+LOCATE 20, 1
+PRINT "A"; POINT(499.4, 200); " B"; POINT(499.5, 200); " C"; POINT(499.6, 200);
+LOCATE 21, 1
+PRINT "D"; POINT(500.4, 200); " E"; POINT(500.5, 200); " F"; POINT(500.6, 200);
+LOCATE 22, 1
+PRINT "G"; POINT(500, 199.6); " H"; POINT(500, 200.4); " I"; POINT(500, 200.6);
+DO
+LOOP UNTIL INKEY$ <> ""
+SYSTEM
