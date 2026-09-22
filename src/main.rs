@@ -1,3 +1,8 @@
+// No console window behind the game on Windows. The flags still need
+// somewhere to print, so `attach_console` borrows the terminal the game was
+// started from, if there was one.
+#![cfg_attr(windows, windows_subsystem = "windows")]
+
 use gorillas::game::Game;
 use gorillas::qb::Qb;
 
@@ -68,7 +73,22 @@ fn parse_args() -> Config {
     cfg
 }
 
+/// On Windows the game has no console of its own. When it was started from
+/// a terminal, attach to that one so `--help`, `--version` and warnings show
+/// up there. Double-clicked, there is no parent console and this does
+/// nothing.
+fn attach_console() {
+    #[cfg(windows)]
+    // SAFETY: AttachConsole takes a plain process id and has no memory
+    // preconditions; failure (no parent console) is harmless and ignored.
+    unsafe {
+        use windows_sys::Win32::System::Console::{AttachConsole, ATTACH_PARENT_PROCESS};
+        AttachConsole(ATTACH_PARENT_PROCESS);
+    }
+}
+
 fn main() {
+    attach_console();
     let cfg = parse_args();
     let mut qb = Qb::windowed(640, 350, cfg.scale);
     qb.speed = cfg.speed;

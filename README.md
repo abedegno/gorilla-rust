@@ -113,6 +113,10 @@ gorilla-rust [--seed N] [--speed F] [--scale N] [--mute]
 | `--scale N` | Window scale factor. 2 is the default, giving 1280×700 |
 | `--mute` | Turn off the PC-speaker sound |
 
+On Windows the game opens without a console window. Run from a terminal,
+the flags still print there, though the prompt may come back before the
+output does.
+
 Answer the prompts, pick `V` to watch the intro or `P` to go straight to a
 game, then type an angle in degrees and a velocity. The wind arrow along the
 bottom shows which way and how hard.

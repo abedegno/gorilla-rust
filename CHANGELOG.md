@@ -11,6 +11,7 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - macOS releases are now one universal binary for Apple silicon and Intel,
   instead of two per-architecture builds.
 - Release notes contain only that version's changes.
+- On Windows the game no longer opens a console window behind itself.
 
 ### Added
 

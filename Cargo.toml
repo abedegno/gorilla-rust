@@ -24,6 +24,9 @@ path = "src/main.rs"
 minifb = "0.28"
 rodio = "0.21"
 
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_Console"] }
+
 [profile.release]
 opt-level = 3
 lto = true

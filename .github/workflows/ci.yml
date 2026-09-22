@@ -37,6 +37,24 @@ jobs:
       - name: Test
         run: cargo test --all-targets
 
+      # The game is a GUI-subsystem program on Windows so no console opens
+      # behind it. Check that it really is, and that --version still prints.
+      - name: Check the Windows binary
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          out="$(./target/debug/gorilla-rust.exe --version)"
+          echo "$out"
+          [[ "$out" == gorilla-rust* ]]
+          python - <<'EOF'
+          import struct
+          exe = open("target/debug/gorilla-rust.exe", "rb").read()
+          pe = struct.unpack_from("<I", exe, 0x3C)[0]
+          subsystem = struct.unpack_from("<H", exe, pe + 24 + 68)[0]
+          assert subsystem == 2, f"subsystem is {subsystem}, expected 2 (Windows GUI)"
+          print("GUI subsystem: no console window")
+          EOF
+
   lint:
     name: Format and clippy
     runs-on: ubuntu-latest
