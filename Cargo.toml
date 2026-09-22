@@ -2,7 +2,7 @@
 name = "gorilla-rust"
 version = "1.0.0"
 edition = "2021"
-rust-version = "1.77"
+rust-version = "1.88"
 authors = ["Jon Williams <jon@jonwilliams.org.uk>"]
 description = "A pixel-faithful Rust port of the 1990 QBasic GORILLAS, measured against the original rather than guessed at"
 repository = "https://github.com/abedegno/gorilla-rust"

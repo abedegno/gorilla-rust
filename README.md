@@ -3,7 +3,7 @@
 [![CI](https://github.com/abedegno/gorilla-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/abedegno/gorilla-rust/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/abedegno/gorilla-rust?sort=semver)](https://github.com/abedegno/gorilla-rust/releases)
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
-[![Rust 1.77+](https://img.shields.io/badge/rust-1.77%2B-orange.svg)](https://www.rust-lang.org)
+[![Rust 1.88+](https://img.shields.io/badge/rust-1.88%2B-orange.svg)](https://www.rust-lang.org)
 
 A pixel-faithful Rust port of **GORILLAS**, the banana-throwing artillery game
 Microsoft shipped with MS-DOS 5 in 1991 as a QBasic sample program.
