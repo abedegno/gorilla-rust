@@ -68,6 +68,16 @@ time. After extracting it, clear the quarantine flag once:
 xattr -d com.apple.quarantine gorilla-rust
 ```
 
+**Linux:** there are builds for x86_64 and arm64. The binary needs ALSA to
+start, and X11 with Xcursor and xkbcommon to open its window. Most desktops
+already have all of them; if it reports a missing library:
+
+```sh
+sudo apt-get install libasound2t64 libx11-6 libxcursor1 libxkbcommon0   # Ubuntu 24.04+, Debian 13+
+sudo apt-get install libasound2 libx11-6 libxcursor1 libxkbcommon0      # older Debian and Ubuntu
+sudo dnf install alsa-lib libX11 libXcursor libxkbcommon                # Fedora
+```
+
 Or install it with `cargo`, which builds locally and is not quarantined:
 
 ```sh
@@ -83,7 +93,7 @@ cargo build --release
 ./target/release/gorilla-rust
 ```
 
-On Linux you will need X11 and ALSA development headers:
+To build on Linux you need the X11 and ALSA development headers:
 
 ```sh
 sudo apt-get install libx11-dev libxkbcommon-dev libasound2-dev   # Debian/Ubuntu

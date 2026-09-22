@@ -10,6 +10,11 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - macOS releases are now one universal binary for Apple silicon and Intel,
   instead of two per-architecture builds.
+- Release notes contain only that version's changes.
+
+### Added
+
+- A Linux build for arm64.
 
 ## [1.0.0] - 2026-09-22
 
