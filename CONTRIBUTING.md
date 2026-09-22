@@ -110,3 +110,23 @@ match the original, say what you measured and how.
 
 Pull requests should keep `cargo test` green and add a test for anything they
 fix. If a change cannot be tested, say so in the description and why.
+
+## Releasing
+
+For the maintainer.
+
+1. Move the `[Unreleased]` changes in `CHANGELOG.md` under a new version
+   heading, add its link at the bottom, and bump `version` in `Cargo.toml`.
+2. Commit, then tag and push: `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`.
+   The Release workflow builds every platform and publishes the GitHub
+   release, with that version's changelog section as the notes. A tag
+   whose version has no changelog section fails before anything is
+   published.
+3. Publish the crate: `cargo publish`. It cannot be undone, only yanked.
+
+After `cargo publish` (or `cargo publish --dry-run`), run `cargo clean -p
+gorilla-rust` before testing again. Cargo verifies the package by building
+it in `target/package/`, and a later `cargo test` can reuse that build, in
+which the fixtures' path points into the package, where there are none.
+Fourteen conformance tests then fail with "could not read".
+
