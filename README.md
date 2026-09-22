@@ -58,9 +58,17 @@ it was caught:
 ## Install
 
 Download a binary for your platform from
-[Releases](https://github.com/abedegno/gorilla-rust/releases). The macOS
-download is a single universal binary for both Apple silicon and Intel,
-signed and notarized. Or build it:
+[Releases](https://github.com/abedegno/gorilla-rust/releases), or build it
+from source as below.
+
+**macOS:** the binary is not yet signed, so Gatekeeper blocks it the first
+time. After extracting it, clear the quarantine flag once:
+
+```sh
+xattr -d com.apple.quarantine gorilla-rust
+```
+
+Or install it with `cargo`, which builds locally and is not quarantined:
 
 ```sh
 cargo install --git https://github.com/abedegno/gorilla-rust

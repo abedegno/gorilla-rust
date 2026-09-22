@@ -8,8 +8,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- macOS releases are now one universal binary, signed with a Developer ID
-  and notarized by Apple, instead of two unsigned per-architecture builds.
+- macOS releases are now one universal binary for Apple silicon and Intel,
+  instead of two per-architecture builds.
 
 ## [1.0.0] - 2026-09-22
 
