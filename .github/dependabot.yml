@@ -10,3 +10,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # The MSRV job pins this on purpose: it exists to prove the crate
+      # still builds on the oldest Rust we claim to support, so bumping it
+      # would quietly turn the check into a second "stable" build.
+      - dependency-name: dtolnay/rust-toolchain
