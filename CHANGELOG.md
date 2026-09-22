@@ -4,6 +4,13 @@ All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- macOS releases are now one universal binary, signed with a Developer ID
+  and notarized by Apple, instead of two unsigned per-architecture builds.
+
 ## [1.0.0] - 2026-09-22
 
 First release. The game is complete and playable end to end.

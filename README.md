@@ -58,7 +58,9 @@ it was caught:
 ## Install
 
 Download a binary for your platform from
-[Releases](https://github.com/abedegno/gorilla-rust/releases), or build it:
+[Releases](https://github.com/abedegno/gorilla-rust/releases). The macOS
+download is a single universal binary for both Apple silicon and Intel,
+signed and notarized. Or build it:
 
 ```sh
 cargo install --git https://github.com/abedegno/gorilla-rust

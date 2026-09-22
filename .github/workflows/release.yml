@@ -1,13 +1,16 @@
 name: Release
 
+# A tag push builds everything and publishes a release. Running it by hand
+# builds the same artifacts from any ref without publishing, which is how
+# to check the macOS signing after changing the secrets.
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
     inputs:
-      tag:
-        description: Tag to build, for example v1.0.0
-        required: true
+      ref:
+        description: Branch, tag or commit to build (nothing is published)
+        default: main
 
 permissions:
   contents: write
@@ -25,19 +28,12 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-          - target: aarch64-apple-darwin
-            os: macos-latest
-          # Cross-compiled from the arm64 runner. The macos-13 x86 runners
-          # are being retired, and Apple's SDK is universal, so this links
-          # against the same frameworks either way.
-          - target: x86_64-apple-darwin
-            os: macos-latest
           - target: x86_64-pc-windows-msvc
             os: windows-latest
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -54,8 +50,8 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Package (Unix)
-        if: runner.os != 'Windows'
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
         run: |
           staging="gorilla-rust-${{ matrix.target }}"
           mkdir -p "$staging"
@@ -83,9 +79,130 @@ jobs:
             gorilla-rust-*.zip*
           if-no-files-found: error
 
+  macos:
+    name: universal-apple-darwin
+    runs-on: macos-latest
+    env:
+      MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+
+      # Apple's SDK is universal, so both slices build on the arm64 runner.
+      - name: Build both architectures
+        run: |
+          cargo build --release --target aarch64-apple-darwin
+          cargo build --release --target x86_64-apple-darwin
+
+      - name: Merge into a universal binary
+        run: |
+          mkdir -p dist
+          lipo -create -output dist/gorilla-rust \
+            target/aarch64-apple-darwin/release/gorilla-rust \
+            target/x86_64-apple-darwin/release/gorilla-rust
+          lipo -info dist/gorilla-rust
+
+      - name: Decide whether to sign
+        id: signing
+        run: |
+          if [ -n "$MACOS_CERTIFICATE_P12" ] && [ -n "$APPLE_API_KEY_P8" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Signing secrets are not set, so this macOS build is unsigned and Gatekeeper will block it."
+          fi
+
+      - name: Import the signing certificate
+        if: steps.signing.outputs.enabled == 'true'
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          keychain_password="$(openssl rand -base64 24)"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          echo "$MACOS_CERTIFICATE_P12" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/certificate.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s \
+            -k "$keychain_password" "$keychain"
+          security list-keychains -d user -s "$keychain" \
+            $(security list-keychains -d user | tr -d '"')
+
+      - name: Sign
+        if: steps.signing.outputs.enabled == 'true'
+        run: |
+          identity="$(security find-identity -v -p codesigning \
+            "$RUNNER_TEMP/signing.keychain-db" \
+            | grep 'Developer ID Application' | head -1 | awk -F'"' '{print $2}')"
+          if [ -z "$identity" ]; then
+            echo "::error::No Developer ID Application identity in the certificate."
+            exit 1
+          fi
+          codesign --force --options runtime --timestamp \
+            --sign "$identity" dist/gorilla-rust
+          codesign --verify --strict --verbose=2 dist/gorilla-rust
+
+      # A bare executable cannot have its ticket stapled, so Gatekeeper
+      # confirms notarization online the first time the binary runs.
+      - name: Notarize
+        if: steps.signing.outputs.enabled == 'true'
+        run: |
+          echo "$APPLE_API_KEY_P8" | base64 --decode > "$RUNNER_TEMP/api_key.p8"
+          ditto -c -k --keepParent dist/gorilla-rust "$RUNNER_TEMP/notarize.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" \
+            --key "$RUNNER_TEMP/api_key.p8" \
+            --key-id "$APPLE_API_KEY_ID" \
+            --issuer "$APPLE_API_ISSUER_ID" \
+            --wait --output-format json > "$RUNNER_TEMP/notary.json"
+          cat "$RUNNER_TEMP/notary.json"
+          status="$(plutil -extract status raw "$RUNNER_TEMP/notary.json")"
+          if [ "$status" != "Accepted" ]; then
+            id="$(plutil -extract id raw "$RUNNER_TEMP/notary.json")"
+            xcrun notarytool log "$id" \
+              --key "$RUNNER_TEMP/api_key.p8" \
+              --key-id "$APPLE_API_KEY_ID" \
+              --issuer "$APPLE_API_ISSUER_ID"
+            echo "::error::Notarization finished with status $status."
+            exit 1
+          fi
+
+      - name: Package
+        run: |
+          staging="gorilla-rust-universal-apple-darwin"
+          mkdir -p "$staging"
+          cp dist/gorilla-rust "$staging/"
+          cp README.md LICENSE CHANGELOG.md "$staging/"
+          tar czf "$staging.tar.gz" "$staging"
+          shasum -a 256 "$staging.tar.gz" > "$staging.tar.gz.sha256"
+
+      - name: Remove the signing material
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/api_key.p8" "$RUNNER_TEMP/certificate.p12"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: gorilla-rust-universal-apple-darwin
+          path: gorilla-rust-*.tar.gz*
+          if-no-files-found: error
+
   release:
     name: Publish release
-    needs: build
+    needs: [build, macos]
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -98,9 +215,8 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          name: ${{ github.event.inputs.tag || github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
           body_path: CHANGELOG.md
           files: artifacts/*
-          draft: false
           generate_release_notes: true
