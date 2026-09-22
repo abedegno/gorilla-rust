@@ -10,7 +10,10 @@ readme = "README.md"
 license = "MIT"
 keywords = ["game", "qbasic", "gorillas", "retro", "dos"]
 categories = ["games"]
-exclude = ["reference/", "fixtures/", ".github/"]
+# An allowlist: the crate is the game and what it needs to build. The
+# tests are left out because they compare against the captures in
+# fixtures/, which are part of the repository, not the crate.
+include = ["src/**", "assets/**", "README.md", "LICENSE", "CHANGELOG.md", "docs/screenshot.png"]
 
 [lib]
 name = "gorillas"
