@@ -1,3 +1,5 @@
+//! The title screen and the questions before the game.
+
 use super::Game;
 use crate::qb::Result;
 

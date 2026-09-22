@@ -1,3 +1,13 @@
+//! The translation of `GORILLAS.BAS`.
+//!
+//! Each file holds the listing's routines for one part of the game, with
+//! the listing's names in snake case: `intro` has `Intro`, `SparklePause`
+//! and `GetInputs`; `city` has `MakeCityScape` and `PlaceGorillas`;
+//! `sprites` has `DrawGorilla`, `DrawBan` and `DoSun`; `shot` has
+//! `PlotShot`, `DoShot` and the explosions; `play` has `GorillaIntro` and
+//! `PlayGame`. Where the port has to split a routine, usually to separate
+//! what it draws from where it waits for a key, the comment says why.
+
 pub mod banana;
 pub mod city;
 pub mod intro;

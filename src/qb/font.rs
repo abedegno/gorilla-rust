@@ -1,3 +1,5 @@
+//! The EGA fonts, read out of the video BIOS the original ran on.
+
 /// The mode 9 character generator, read out of the video BIOS ROM of the
 /// original. 256 glyphs of 14 rows, one byte per row, high bit leftmost.
 pub static FONT_8X14: &[u8; 3584] = include_bytes!("../../assets/fonts/ega8x14.bin");

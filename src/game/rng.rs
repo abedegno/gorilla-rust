@@ -1,3 +1,5 @@
+//! A seeded random number generator.
+
 /// A small seeded generator. The original used QBasic's RND seeded from
 /// TIMER. Matching its exact sequence is a non-goal, but a fixed seed
 /// reproducing the same game is wanted, for the playthrough test.

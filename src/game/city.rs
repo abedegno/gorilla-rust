@@ -1,3 +1,5 @@
+//! The skyline, the wind, and where the gorillas stand.
+
 use super::rng::Rng;
 use super::{Game, GHEIGHT, SCR_HEIGHT, SCR_WIDTH, WINDOWCOLOR};
 use crate::qb::screen::{cint, PutMode};

@@ -1,3 +1,5 @@
+//! Text on the screen: `LOCATE`, `COLOR`, `PRINT` and `VIEW PRINT`.
+
 use super::font::{glyph, FONT_8X14, FONT_8X16};
 use super::Qb;
 

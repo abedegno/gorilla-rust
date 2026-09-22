@@ -1,3 +1,5 @@
+//! Keyboard input: waiting for a key, and `LINE INPUT`.
+
 use super::{Qb, Result};
 
 impl Qb {

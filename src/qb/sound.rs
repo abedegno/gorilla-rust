@@ -1,3 +1,5 @@
+//! `PLAY`: parsing the music macro language into notes.
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Note {
     /// Hertz, or zero for a rest.

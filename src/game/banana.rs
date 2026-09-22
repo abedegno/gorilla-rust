@@ -1,3 +1,5 @@
+//! The banana's four rotations, decoded from the listing's `DATA` block.
+
 use crate::qb::screen::Sprite;
 
 // The four rotations as gorilla.bas stores them, from the EGABanana DATA

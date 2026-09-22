@@ -1,3 +1,5 @@
+//! The intro dance and the main game loop.
+
 use super::{Game, ARMSDOWN, LEFTUP, MAX_COL, OBJECTCOLOR, RIGHTUP};
 use crate::qb::screen::PutMode;
 use crate::qb::Result;

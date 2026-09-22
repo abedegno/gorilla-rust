@@ -1,3 +1,5 @@
+//! A throw: reading the angle and speed, the banana's flight, and what it hits.
+
 use super::{scl, Game, BACKATTR, OBJECTCOLOR, SCR_HEIGHT, SCR_WIDTH, SUNATTR, SUN_HT};
 use crate::qb::screen::{cint, PutMode};
 use crate::qb::Result;

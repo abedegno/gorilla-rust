@@ -1,3 +1,5 @@
+//! Loading and comparing framebuffer captures from the original.
+
 use super::screen::Screen;
 
 /// Load a fixture captured from the original. The file is one byte per pixel

@@ -1,3 +1,5 @@
+//! Drawing the gorillas, the banana and the sun.
+
 use super::{scl, Game, ARMSDOWN, BACKATTR, LEFTUP, OBJECTCOLOR, RIGHTUP, SCR_WIDTH, SUNATTR};
 use crate::qb::screen::{cint, PutMode};
 use std::f64::consts::PI;

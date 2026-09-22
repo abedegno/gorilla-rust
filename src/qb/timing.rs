@@ -1,3 +1,5 @@
+//! How long to wait, clamped so no `--speed` can make a wait unbounded.
+
 use std::time::{Duration, Instant};
 
 /// The ceiling `deadline` clamps to. This exists only to keep

@@ -1,3 +1,14 @@
+//! A QBasic runtime: the slice of QBasic that `GORILLAS.BAS` uses.
+//!
+//! [`Qb`] holds the screen, the text cursor and colours, the keyboard queue
+//! and the sound output. Drawing goes through [`Qb::screen`], a palette
+//! indexed framebuffer, and is synchronous; the calls that wait, such as
+//! [`Qb::rest`] and [`Qb::wait_key`], are the ones that show the screen and
+//! read the keyboard while they do.
+//!
+//! Where QBasic's behaviour is not what the manual suggests, the code
+//! follows a measurement of the original, and the comment says so.
+
 pub mod fixture;
 pub mod font;
 pub mod input;
