@@ -27,8 +27,11 @@ jobs:
             os: ubuntu-latest
           - target: aarch64-apple-darwin
             os: macos-latest
+          # Cross-compiled from the arm64 runner. The macos-13 x86 runners
+          # are being retired, and Apple's SDK is universal, so this links
+          # against the same frameworks either way.
           - target: x86_64-apple-darwin
-            os: macos-13
+            os: macos-latest
           - target: x86_64-pc-windows-msvc
             os: windows-latest
     steps:
