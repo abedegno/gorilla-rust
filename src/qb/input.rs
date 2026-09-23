@@ -5,12 +5,12 @@ use super::{Qb, Result};
 impl Qb {
     /// Block until any key is pressed and return it. This is the
     /// `DO WHILE Char$ = "": Char$ = INKEY$: LOOP` pattern in the listing.
-    pub fn wait_key(&mut self) -> Result<char> {
+    pub async fn wait_key(&mut self) -> Result<char> {
         loop {
             if let Some(c) = self.inkey()? {
                 return Ok(c);
             }
-            self.rest(0.01)?;
+            self.rest(0.01).await?;
         }
     }
 
@@ -24,7 +24,7 @@ impl Qb {
     /// neither of them this one: `GetNum#` and `SparklePause`. Adding it
     /// makes every test that queues input before calling this hang forever,
     /// which nothing catches except an external timeout.
-    pub fn line_input(&mut self, prompt: &str) -> Result<String> {
+    pub async fn line_input(&mut self, prompt: &str) -> Result<String> {
         let (row, col) = (self.text.row, self.text.col);
         let mut buf = String::new();
         loop {
@@ -38,7 +38,7 @@ impl Qb {
                 Some(c) if !c.is_control() => buf.push(c),
                 _ => {}
             }
-            self.rest(0.01)?;
+            self.rest(0.01).await?;
         }
         self.locate(row, col);
         self.print(&format!("{prompt}{buf}  "));
@@ -56,7 +56,7 @@ mod tests {
         for c in "Jon\r".chars() {
             q.push_key(c);
         }
-        assert_eq!(q.line_input("Name: ").unwrap(), "Jon");
+        assert_eq!(pollster::block_on(q.line_input("Name: ")).unwrap(), "Jon");
     }
 
     #[test]
@@ -65,7 +65,7 @@ mod tests {
         for c in "Jonx\u{8}\r".chars() {
             q.push_key(c);
         }
-        assert_eq!(q.line_input("Name: ").unwrap(), "Jon");
+        assert_eq!(pollster::block_on(q.line_input("Name: ")).unwrap(), "Jon");
     }
 
     #[test]
@@ -74,14 +74,14 @@ mod tests {
         for c in "\u{8}\u{8}A\r".chars() {
             q.push_key(c);
         }
-        assert_eq!(q.line_input("").unwrap(), "A");
+        assert_eq!(pollster::block_on(q.line_input("")).unwrap(), "A");
     }
 
     #[test]
     fn wait_key_returns_the_first_key_pressed() {
         let mut q = Qb::headless(640, 350);
         q.push_key('V');
-        assert_eq!(q.wait_key().unwrap(), 'V');
+        assert_eq!(pollster::block_on(q.wait_key()).unwrap(), 'V');
     }
 
     #[test]

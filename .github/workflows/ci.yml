@@ -95,3 +95,65 @@ jobs:
 
       - name: Build
         run: cargo build
+
+  wasm:
+    name: Browser build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --lib --target wasm32-unknown-unknown
+
+      - name: Clippy
+        run: cargo clippy --lib --target wasm32-unknown-unknown
+
+      # The rest runs the page itself, so a pull request that breaks the
+      # browser version fails here rather than at the next release. One
+      # browser keeps it quick; the Pages workflow runs all three.
+
+      # The CLI must match the library exactly, or the page fails to load.
+      - name: Find the wasm-bindgen version
+        id: bindgen
+        run: |
+          version="$(awk '/^name = "wasm-bindgen"$/ { getline; gsub(/"/, "", $3); print $3 }' Cargo.lock)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen@${{ steps.bindgen.outputs.version }}
+
+      - name: Build the page
+        run: web/build.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install the test browser
+        working-directory: web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        working-directory: web
+        env:
+          CI: "true"
+        run: npx playwright test --project=chromium
+
+      # Each failed test leaves the page's state at the failure here.
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-results
+          path: web/test-results

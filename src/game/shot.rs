@@ -239,7 +239,7 @@ impl Game {
     /// and cannot be driven from a test. The per key logic therefore lives in
     /// `get_num_key` above, which is where the tests point. Do not move it
     /// back inline: it looks testable and is not.
-    pub fn get_num(&mut self, row: i32, col: i32) -> Result<f64> {
+    pub async fn get_num(&mut self, row: i32, col: i32) -> Result<f64> {
         let mut result = String::new();
         self.qb.clear_keys();
         loop {
@@ -248,11 +248,11 @@ impl Game {
             if let Some(key) = self.qb.inkey()? {
                 match get_num_key(&mut result, key) {
                     Entry::Done => break,
-                    Entry::Beep => self.qb.beep()?,
+                    Entry::Beep => self.qb.beep().await?,
                     Entry::Continue => {}
                 }
             }
-            self.qb.rest(0.01)?;
+            self.qb.rest(0.01).await?;
         }
         self.qb.locate(row, col);
         self.qb.print(&format!("{result} "));
@@ -260,8 +260,8 @@ impl Game {
     }
 
     /// DoExplosion, the crater a banana leaves in a building.
-    pub fn do_explosion(&mut self, x: f64, y: f64) -> Result<()> {
-        self.qb.play("MBO0L32EFGEFDC")?;
+    pub async fn do_explosion(&mut self, x: f64, y: f64) -> Result<()> {
+        self.qb.play("MBO0L32EFGEFDC").await?;
         let radius = SCR_HEIGHT as f64 / 50.0;
         let inc = 0.5;
         let colour = self.explosion_color;
@@ -273,7 +273,7 @@ impl Game {
         let mut c = radius;
         while c >= 0.0 {
             self.qb.screen.circle(x, y, c, BACKATTR, None, None, None);
-            self.qb.rest(0.005)?;
+            self.qb.rest(0.005).await?;
             c -= inc;
         }
         Ok(())
@@ -344,7 +344,7 @@ impl Game {
         }
     }
 
-    pub fn explode_gorilla(&mut self, x: f64, _y: f64) -> Result<usize> {
+    pub async fn explode_gorilla(&mut self, x: f64, _y: f64) -> Result<usize> {
         let y_adj = scl(12.0) as f64;
         let x_adj = scl(5.0) as f64;
         let scl_x = SCR_WIDTH as f64 / 320.0;
@@ -358,7 +358,7 @@ impl Game {
             self.gorilla_y[hit - 1] as f64,
         );
         let colour = self.explosion_color;
-        self.qb.play("MBO0L16EFGEFDC")?;
+        self.qb.play("MBO0L16EFGEFDC").await?;
 
         self.explode_fan(gx, gy, colour);
         self.explode_ball(gx, gy);
@@ -373,29 +373,29 @@ impl Game {
                 None,
                 Some(-1.57),
             );
-            self.qb.rest(0.004)?;
+            self.qb.rest(0.004).await?;
         }
         Ok(hit)
     }
 
     /// VictoryDance
-    pub fn victory_dance(&mut self, player: usize) -> Result<()> {
+    pub async fn victory_dance(&mut self, player: usize) -> Result<()> {
         let (x, y) = (self.gorilla_x[player - 1], self.gorilla_y[player - 1]);
         for _ in 0..4 {
             let l = self.gor_l.clone();
             self.qb.screen.put(x, y, &l, PutMode::Pset);
-            self.qb.play("MFO0L32EFGEFDC")?;
-            self.qb.rest(0.2)?;
+            self.qb.play("MFO0L32EFGEFDC").await?;
+            self.qb.rest(0.2).await?;
             let r = self.gor_r.clone();
             self.qb.screen.put(x, y, &r, PutMode::Pset);
-            self.qb.play("MFO0L32EFGEFDC")?;
-            self.qb.rest(0.2)?;
+            self.qb.play("MFO0L32EFGEFDC").await?;
+            self.qb.rest(0.2).await?;
         }
         Ok(())
     }
 
     /// PlotShot. Returns the player hit, counting from 1, or 0 for no hit.
-    pub fn plot_shot(
+    pub async fn plot_shot(
         &mut self,
         start_x: i32,
         start_y: i32,
@@ -414,8 +414,8 @@ impl Game {
             self.gor_r.clone()
         };
         self.qb.screen.put(start_x, start_y, &toss, PutMode::Pset);
-        self.qb.play("MBo0L32A-L64CL16BL64A+")?;
-        self.qb.rest(0.1)?;
+        self.qb.play("MBo0L32A-L64CL16BL64A+").await?;
+        self.qb.rest(0.1).await?;
         let down = self.gor_d.clone();
         self.qb.screen.put(start_x, start_y, &down, PutMode::Pset);
 
@@ -448,7 +448,7 @@ impl Game {
         let mut rot = 0i32;
 
         while !impact && on_screen {
-            self.qb.rest(0.02)?;
+            self.qb.rest(0.02).await?;
 
             if need_erase {
                 need_erase = false;
@@ -514,9 +514,9 @@ impl Game {
 
         if point_val != OBJECTCOLOR as i32 && impact {
             let (cx, cy) = crater_centre(x, y);
-            self.do_explosion(cx, cy)?;
+            self.do_explosion(cx, cy).await?;
         } else if point_val == OBJECTCOLOR as i32 {
-            player_hit = self.explode_gorilla(x, y)?;
+            player_hit = self.explode_gorilla(x, y).await?;
         }
 
         Ok(player_hit)
@@ -530,16 +530,16 @@ impl Game {
     /// thrower hit himself, because that scores for the opponent. Returning
     /// it directly is better than the alternative of reading a pixel where
     /// the thrower stood, which an explosion can legitimately have cleared.
-    pub fn do_shot(&mut self, player: usize, x: i32, y: i32) -> Result<(bool, usize)> {
+    pub async fn do_shot(&mut self, player: usize, x: i32, y: i32) -> Result<(bool, usize)> {
         let (locate_col, angle_col, velocity_col) = prompt_columns(player);
 
         self.qb.locate(2, locate_col);
         self.qb.print("Angle:");
-        let angle = self.get_num(2, angle_col)?;
+        let angle = self.get_num(2, angle_col).await?;
 
         self.qb.locate(3, locate_col);
         self.qb.print("Velocity:");
-        let velocity = typed_velocity(self.get_num(3, velocity_col)?);
+        let velocity = typed_velocity(self.get_num(3, velocity_col).await?);
 
         let angle = aim(angle, player);
 
@@ -552,13 +552,13 @@ impl Game {
         }
 
         self.sun_hit = false;
-        let player_hit = self.plot_shot(x, y, angle, velocity, player)?;
+        let player_hit = self.plot_shot(x, y, angle, velocity, player).await?;
         if player_hit == 0 {
             Ok((false, 0))
         } else {
             // Hitting yourself means the other gorilla dances. Same rule
             // that decides the point, so it is the same function.
-            self.victory_dance(survivor(player, player_hit))?;
+            self.victory_dance(survivor(player, player_hit)).await?;
             Ok((true, player_hit))
         }
     }
@@ -738,7 +738,7 @@ mod tests {
         g.qb.screen.cls(0);
         g.gorilla_x = [50, 560];
         g.gorilla_y = [300, 300];
-        let hit = g.plot_shot(50, 300, 45.0, 100.0, 1).unwrap();
+        let hit = pollster::block_on(g.plot_shot(50, 300, 45.0, 100.0, 1)).unwrap();
         assert_eq!(hit, 0, "nothing was there to hit");
     }
 
@@ -751,7 +751,7 @@ mod tests {
         g.gorilla_y = [200, 200];
         // Put a gorilla coloured block where player 1 stands.
         g.qb.screen.line_fill(100, 200, 128, 228, 1);
-        let hit = g.plot_shot(100, 200, 45.0, 1.0, 1).unwrap();
+        let hit = pollster::block_on(g.plot_shot(100, 200, 45.0, 1.0, 1)).unwrap();
         assert_eq!(hit, 1, "a velocity below 2 should hit the thrower");
     }
 
@@ -762,7 +762,7 @@ mod tests {
         // A wall along the bottom so the shot ends quickly.
         g.qb.screen.line_fill(0, 340, 639, 349, 5);
         let before_wall = g.qb.screen.pixels.clone();
-        g.plot_shot(20, 330, 60.0, 30.0, 1).unwrap();
+        pollster::block_on(g.plot_shot(20, 330, 60.0, 30.0, 1)).unwrap();
         // Everything above the wall and away from the impact should be sky.
         let mut stray = 0;
         for y in 0..300 {

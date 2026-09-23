@@ -154,6 +154,20 @@ impl Screen {
         out.extend(self.pixels.iter().map(|&p| lut[(p & 15) as usize]));
     }
 
+    /// The framebuffer as RGBA bytes, which is the layout a browser canvas's
+    /// `ImageData` takes.
+    pub fn to_rgba(&self, out: &mut Vec<u8>) {
+        let lut: [[u8; 4]; 16] = std::array::from_fn(|i| {
+            let c = ega_rgb(self.regs[i]);
+            [(c >> 16) as u8, (c >> 8) as u8, c as u8, 0xFF]
+        });
+        out.clear();
+        out.reserve(self.pixels.len() * 4);
+        for &p in &self.pixels {
+            out.extend_from_slice(&lut[(p & 15) as usize]);
+        }
+    }
+
     /// LINE (x1,y1)-(x2,y2), c
     ///
     /// QBasic is NOT the textbook Bresenham. Measured across 32 lines drawn
@@ -540,5 +554,30 @@ mod tests {
         s.palette(1, 46);
         s.to_argb(&mut out);
         assert_eq!(out[0], 0xFFFF_AA55);
+    }
+
+    #[test]
+    fn to_rgba_matches_to_argb_byte_for_byte() {
+        let mut s = Screen::new(4, 1);
+        s.pixels = vec![0, 1, 14, 15];
+        let (mut argb, mut rgba) = (Vec::new(), Vec::new());
+        s.to_argb(&mut argb);
+        s.to_rgba(&mut rgba);
+        assert_eq!(rgba.len(), 16);
+        for (i, c) in argb.iter().enumerate() {
+            let want = [(c >> 16) as u8, (c >> 8) as u8, *c as u8, 0xFF];
+            assert_eq!(&rgba[i * 4..i * 4 + 4], &want, "pixel {i}");
+        }
+    }
+
+    #[test]
+    fn to_rgba_puts_red_first() {
+        // Index 4 is red in the default palette, (170, 0, 0). A canvas takes
+        // RGBA, so a red and blue swap shows up here as blue.
+        let mut s = Screen::new(1, 1);
+        s.pixels = vec![4];
+        let mut rgba = Vec::new();
+        s.to_rgba(&mut rgba);
+        assert_eq!(rgba, vec![170, 0, 0, 255]);
     }
 }

@@ -6,6 +6,13 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- A browser version at https://abedegno.github.io/gorilla-rust/, built
+  from the same code and compiled to WebAssembly, with an on-screen keypad
+  on touch devices. Its intro and menu screens are tested against the
+  captures from the original in Chromium, Firefox and WebKit.
+
 ## [1.1.0] - 2026-09-23
 
 ### Added

@@ -1,0 +1,149 @@
+:root {
+  color-scheme: dark;
+  --bg: #000;
+  --fg: #aaa;
+  --accent: #55ffff;
+  --button: #222;
+  /* The layout's measurements, named so the screen's size below can be
+     worked out from them rather than guessed. */
+  --pad: 16px;
+  --gap: 12px;
+  --control-h: 38px;
+  --key: 56px;
+  /* Everything in a column that is not the screen: the page's padding
+     above and below, and the mute button with the gap above it. */
+  --reserve: calc(2 * var(--pad) + var(--gap) + var(--control-h));
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap);
+  padding: var(--pad);
+}
+
+/* As wide as the page allows, but never so tall that the start button,
+   or the mute button below it, is out of view: a short window must not
+   need scrolling to begin. The width that gives a screen of the height
+   left over is that height times 640 / 350. dvh, where the browser has
+   it, is the height with a phone's address bar showing; vh comes first
+   as the fallback. */
+.stage {
+  position: relative;
+  width: min(100%, 1280px, calc((100vh - var(--reserve)) * 640 / 350));
+  width: min(100%, 1280px, calc((100dvh - var(--reserve)) * 640 / 350));
+}
+
+/* The canvas switches between 640x350 and 640x400. The box keeps the
+   graphics screen's shape and letterboxes the text screens inside it, as
+   the native window does, so the page never jumps. */
+#screen {
+  display: block;
+  width: 100%;
+  aspect-ratio: 640 / 350;
+  object-fit: contain;
+  background: #000;
+  /* crisp-edges first, as the fallback: a browser that knows both keeps
+     the last, and pixelated is the one that keeps every pixel square. */
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--accent);
+  font: inherit;
+  font-size: clamp(18px, 4vw, 32px);
+  cursor: pointer;
+}
+
+.overlay:disabled { cursor: progress; }
+
+.controls button,
+#keypad button {
+  border: 1px solid #555;
+  background: var(--button);
+  color: var(--fg);
+  font: inherit;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.controls button {
+  height: var(--control-h);
+  padding: 0 14px;
+}
+
+#keypad { display: none; }
+
+@media (pointer: coarse) {
+  #keypad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    width: min(100%, 420px);
+  }
+  #keypad button {
+    min-height: var(--key);
+    font-size: 22px;
+  }
+  #keypad .enter { grid-column: span 2; }
+}
+
+/* A phone on its side has too little height for the screen and the keypad
+   one above the other, so the keypad goes beside the screen, with square
+   keys small enough that its four rows and the mute button fit in the
+   height of a small phone. The screen takes the width that is left, and
+   no more than the whole height allows. */
+@media (pointer: coarse) and (orientation: landscape) {
+  :root {
+    --pad: 8px;
+    --key: 48px;
+    --keypad-w: calc(4 * var(--key) + 3 * 8px);
+  }
+  main {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto 1fr;
+    justify-content: center;
+    align-items: start;
+  }
+  .stage {
+    grid-row: 1 / span 2;
+    width: min(calc((100vh - 2 * var(--pad)) * 640 / 350),
+               calc(100vw - 2 * var(--pad) - var(--gap) - var(--keypad-w)));
+    width: min(calc((100dvh - 2 * var(--pad)) * 640 / 350),
+               calc(100vw - 2 * var(--pad) - var(--gap) - var(--keypad-w)));
+  }
+  .controls { grid-column: 2; }
+  #keypad {
+    grid-column: 2;
+    width: var(--keypad-w);
+  }
+  #error { grid-column: 1 / -1; }
+}
+
+#error { color: #ff5555; }
+
+footer {
+  text-align: center;
+  padding: 8px 16px 24px;
+  font-size: 14px;
+}
+
+footer a { color: var(--accent); }

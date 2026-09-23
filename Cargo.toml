@@ -23,12 +23,39 @@ path = "src/lib.rs"
 name = "gorilla-rust"
 path = "src/main.rs"
 
-[dependencies]
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 minifb = "0.28"
 rodio = "0.21"
+pollster = "0.4"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_System_Console"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = [
+    "AudioContext",
+    "AudioContextState",
+    "AudioDestinationNode",
+    "AudioNode",
+    "AudioParam",
+    "AudioScheduledSourceNode",
+    "BaseAudioContext",
+    "CanvasRenderingContext2d",
+    "console",
+    "Document",
+    "Element",
+    "GainNode",
+    "HtmlCanvasElement",
+    "ImageData",
+    "Node",
+    "OscillatorNode",
+    "OscillatorType",
+    "Performance",
+    "Window",
+] }
 
 [profile.release]
 opt-level = 3
