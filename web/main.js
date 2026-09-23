@@ -113,12 +113,49 @@ async function main() {
     if (started) resume_audio();
   });
 
+  // The keypad has two layouts, numbers and letters, swapped by its ABC
+  // and 123 keys. Shift is one-shot, as on a phone: it capitalises the
+  // next letter and then lets go.
+  const main = document.querySelector('main');
+  const digits = document.querySelector('#keypad .digits');
+  const letters = document.querySelector('#keypad .letters');
+  const shiftButton = letters.querySelector('[data-shift]');
+  const letterButtons = [...letters.querySelectorAll('[data-key]')].filter((b) =>
+    /^[a-z]$/.test(b.dataset.key),
+  );
+  let shifted = false;
+  const setShift = (on) => {
+    shifted = on;
+    shiftButton.setAttribute('aria-pressed', String(on));
+    for (const b of letterButtons) {
+      b.textContent = on ? b.dataset.key.toUpperCase() : b.dataset.key;
+    }
+  };
+  const showLetters = (on) => {
+    letters.hidden = !on;
+    digits.hidden = on;
+    main.classList.toggle('letters', on);
+  };
+
   for (const button of document.querySelectorAll('#keypad button')) {
     button.addEventListener('pointerdown', (e) => {
       e.preventDefault();
+      if (button.dataset.switch) {
+        showLetters(button.dataset.switch === 'abc');
+        return;
+      }
+      if (button.hasAttribute('data-shift')) {
+        setShift(!shifted);
+        return;
+      }
       if (!started) return;
-      const c = keyToChar(button.dataset.key);
-      if (c !== null) push_key(c);
+      let c = keyToChar(button.dataset.key);
+      if (c === null) return;
+      if (shifted && /^[a-z]$/.test(c)) {
+        c = c.toUpperCase();
+        setShift(false);
+      }
+      push_key(c);
     });
   }
 }

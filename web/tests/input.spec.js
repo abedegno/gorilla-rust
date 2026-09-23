@@ -132,11 +132,76 @@ test.describe('on a touch screen', () => {
     await waitForIntro(page);
     await expect(page.locator('#keypad')).toBeVisible();
     for (const key of ['Enter', 'Enter', 'Enter', '1', 'Enter', 'Enter']) {
-      await page.locator(`#keypad [data-key="${key}"]`).tap();
+      await page.locator(`#keypad [data-key="${key}"]:visible`).tap();
     }
     // The capture typed Alice and Bob; the keypad takes the default names.
     // So compare from the points prompt, row 11, downwards.
     await expect.poll(() => canvasDiff(page, CHOICE, { minRow: 11 })).toEqual({ diff: 0 });
+  });
+
+  test('the ABC keys type the names the original was captured with', async ({ page }) => {
+    // The whole menu screen, names included, must match the capture: before
+    // the ABC keys, a touch screen could only reach it with the default names.
+    await startGame(page);
+    await waitForIntro(page);
+    const key = (k) => page.locator(`#keypad [data-key="${k}"]:visible`).tap();
+    const button = (name) => page.locator('#keypad').getByRole('button', { name, exact: true }).tap();
+    await key('Enter'); // any key leaves the intro
+    await button('ABC');
+    // Shift is one-shot, as on a phone: it capitalises the next letter only.
+    // The x and Backspace check Backspace on this layout too.
+    await button('Shift');
+    for (const k of ['a', 'l', 'i', 'c', 'x', 'Backspace', 'e', 'Enter']) await key(k);
+    await button('Shift');
+    for (const k of ['b', 'o', 'b', 'Enter']) await key(k);
+    await button('123');
+    for (const k of ['1', 'Enter', 'Enter']) await key(k);
+    await expect.poll(() => canvasDiff(page, CHOICE)).toEqual({ diff: 0 });
+  });
+
+  test('every ABC key types what the keyboard would', async ({ page }) => {
+    // Each letter and Space, by the label a player sees, in three runs that
+    // each fit on the prompt line. A key whose data-key is wrong leaves a
+    // different name on the screen from the keyboard's.
+    const runs = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm '];
+    const snapshot = () => page.evaluate(() => document.getElementById('screen').toDataURL());
+    const atThePrompt = async () => {
+      await startGame(page);
+      await waitForIntro(page);
+      await page.keyboard.press('x');
+      await expect.poll(() => canvasDiff(page, INTRO, BORDER)).not.toEqual({ diff: 0 });
+      await page.waitForTimeout(200);
+    };
+    const clear = async (n, press) => {
+      for (let i = 0; i < n; i++) await press();
+      await page.waitForTimeout(500);
+    };
+
+    await atThePrompt();
+    const typed = [];
+    for (const run of runs) {
+      await page.keyboard.type(run);
+      await page.waitForTimeout(1000);
+      typed.push(await snapshot());
+      await clear(run.length, () => page.keyboard.press('Backspace'));
+    }
+
+    await atThePrompt();
+    const keypad = page.locator('#keypad');
+    await keypad.getByRole('button', { name: 'ABC', exact: true }).tap();
+    for (const [i, run] of runs.entries()) {
+      for (const c of run) {
+        const name = c === ' ' ? 'Space' : c;
+        await keypad.getByRole('button', { name, exact: true }).tap();
+      }
+      await expect
+        .poll(async () => (await snapshot()) === typed[i], {
+          message: `the ABC keys left the same text as the keyboard for "${run}"`,
+        })
+        .toBe(true);
+      const back = keypad.getByRole('button', { name: 'Backspace', exact: true });
+      await clear(run.length, () => back.tap());
+    }
   });
 
   test('every keypad button types what the keyboard would', async ({ page }) => {
