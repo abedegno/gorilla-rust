@@ -13,25 +13,28 @@
       <canvas id="screen" width="640" height="350" aria-label="The game screen"></canvas>
       <button id="start" class="overlay" type="button">Click or tap to start</button>
     </div>
+    <!-- tabindex="-1" on mute and the keypad: these buttons are pointer-only,
+         so a key meant for the game can never land on and press one instead.
+         A keyboard player who wants silence uses ?mute, which is remembered. -->
     <div class="controls">
-      <button id="mute" type="button" aria-pressed="false">Sound on</button>
+      <button id="mute" type="button" tabindex="-1" aria-pressed="false">Sound on</button>
     </div>
     <div id="keypad" role="group" aria-label="Keypad">
-      <button type="button" data-key="7">7</button>
-      <button type="button" data-key="8">8</button>
-      <button type="button" data-key="9">9</button>
-      <button type="button" data-key="Backspace" aria-label="Backspace">⌫</button>
-      <button type="button" data-key="4">4</button>
-      <button type="button" data-key="5">5</button>
-      <button type="button" data-key="6">6</button>
-      <button type="button" data-key="V">V</button>
-      <button type="button" data-key="1">1</button>
-      <button type="button" data-key="2">2</button>
-      <button type="button" data-key="3">3</button>
-      <button type="button" data-key="P">P</button>
-      <button type="button" data-key="0">0</button>
-      <button type="button" data-key=".">.</button>
-      <button type="button" data-key="Enter" class="enter" aria-label="Enter">⏎</button>
+      <button type="button" data-key="7" tabindex="-1">7</button>
+      <button type="button" data-key="8" tabindex="-1">8</button>
+      <button type="button" data-key="9" tabindex="-1">9</button>
+      <button type="button" data-key="Backspace" tabindex="-1" aria-label="Backspace">⌫</button>
+      <button type="button" data-key="4" tabindex="-1">4</button>
+      <button type="button" data-key="5" tabindex="-1">5</button>
+      <button type="button" data-key="6" tabindex="-1">6</button>
+      <button type="button" data-key="V" tabindex="-1">V</button>
+      <button type="button" data-key="1" tabindex="-1">1</button>
+      <button type="button" data-key="2" tabindex="-1">2</button>
+      <button type="button" data-key="3" tabindex="-1">3</button>
+      <button type="button" data-key="P" tabindex="-1">P</button>
+      <button type="button" data-key="0" tabindex="-1">0</button>
+      <button type="button" data-key="." tabindex="-1">.</button>
+      <button type="button" data-key="Enter" class="enter" tabindex="-1" aria-label="Enter">⏎</button>
     </div>
     <p id="error" role="alert" hidden></p>
   </main>
