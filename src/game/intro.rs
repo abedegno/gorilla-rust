@@ -65,11 +65,10 @@ impl Game {
     /// SparklePause, the flashing border on the intro and game over screens.
     ///
     /// The phase arithmetic for the border lives in the free functions
-    /// `sparkle_rows` and `sparkle_lit` rather than inline here, because
-    /// `sparkle_pause` itself cannot be exercised by a test: it clears the
-    /// keyboard buffer and then blocks until a key arrives, so headless it
-    /// never terminates. Keeping the arithmetic in testable functions is
-    /// what catches an off-by-one here instead of a passing suite hiding it.
+    /// `sparkle_rows` and `sparkle_lit` rather than inline here. This loop
+    /// clears the keyboard buffer and then waits for a key, so a test can
+    /// only end it with `Qb::type_answers`, and cannot see the frames in
+    /// between. The free functions are where an off-by-one gets caught.
     pub async fn sparkle_pause(&mut self) -> Result<()> {
         self.qb.color(4, Some(0));
         self.qb.clear_keys();
@@ -87,10 +86,9 @@ impl Game {
     /// One frame of the sparkling border, at phase 0 to 4, which is `A - 1`
     /// in the listing.
     ///
-    /// Split out of `sparkle_pause` for the same reason `get_num_key` is
-    /// split out of `get_num`: the loop above clears the keyboard buffer and
-    /// then waits, so headless it never terminates and the screen it
-    /// composes could not otherwise be captured. It does not set the colour,
+    /// Split out of `sparkle_pause` so a test can compose one frame and
+    /// compare it: the loop above only stops for a key, and by then it has
+    /// drawn over whatever frame it was on. It does not set the colour,
     /// because the listing sets it once outside the loop.
     pub fn sparkle_frame(&mut self, phase: usize) {
         let pattern: Vec<char> = "*    ".repeat(18).chars().collect();
@@ -196,9 +194,8 @@ mod tests {
         // Derived by hand from SparklePause in gorilla.bas, where A$ is
         // "*    " repeated and A runs 1 to 5.
         //
-        // This exists because `sparkle_pause` itself cannot be tested: it
-        // clears the keyboard buffer and then waits for a key, so headless it
-        // never terminates. Two off-by-one errors lived in this arithmetic
+        // This exists because a test cannot see `sparkle_pause`'s frames,
+        // only end the loop. Two off-by-one errors lived in this arithmetic
         // and the whole suite passed anyway.
         let pattern: Vec<char> = "*    ".repeat(18).chars().collect();
 
@@ -211,6 +208,26 @@ mod tests {
         let (top, bottom) = super::sparkle_rows(&pattern, 1);
         assert_eq!(&top[..6], "    * ");
         assert_eq!(&bottom[..6], "  *   ");
+
+        // Every phase in full: MID$(A$, A, 80) puts a star where
+        // (i + A - 1) is a multiple of 5, and MID$(A$, 6 - A, 80) where
+        // (i + 5 - A) is.
+        for phase in 0..5 {
+            let (top, bottom) = super::sparkle_rows(&pattern, phase);
+            let row = |start: usize| -> String {
+                (0..80)
+                    .map(|i| {
+                        if (i + start).is_multiple_of(5) {
+                            '*'
+                        } else {
+                            ' '
+                        }
+                    })
+                    .collect()
+            };
+            assert_eq!(top, row(phase), "top row at phase {phase}");
+            assert_eq!(bottom, row(4 - phase), "bottom row at phase {phase}");
+        }
 
         for b in 2..=21 {
             assert_eq!(super::sparkle_lit(0, b), b % 5 == 0, "phase 0 row {b}");
@@ -259,6 +276,18 @@ mod tests {
             .flat_map(|y| (0..s.width).map(move |x| (x, y)))
             .map(|(x, y)| s.pixel_at(x, y))
             .collect()
+    }
+
+    #[test]
+    fn zero_points_or_three_digits_are_asked_again() {
+        for bad in ["0", "123"] {
+            let mut g = game_with_keys(&format!("A\rB\r{bad}\r4\r\r"));
+            let (_, _, games) = pollster::block_on(g.get_inputs()).unwrap();
+            assert_eq!(games, 4, "{bad} should have been asked again");
+        }
+        // Two digits is the most it takes.
+        let mut g = game_with_keys("A\rB\r99\r\r");
+        assert_eq!(pollster::block_on(g.get_inputs()).unwrap().2, 99);
     }
 
     #[test]
@@ -312,5 +341,24 @@ mod tests {
         assert!((clean.gravity - 12.0).abs() < 1e-9);
 
         assert_eq!(row_pixels(&rejected, 14), row_pixels(&clean, 14));
+    }
+
+    #[test]
+    fn the_intro_shows_its_text_and_border_until_a_key() {
+        let mut g = Game::new(Qb::headless(640, 350), 1);
+        g.qb.type_answers(" ");
+        pollster::block_on(g.intro()).unwrap();
+        assert_eq!(g.qb.typed_answers_left(), 0, "the key should end it");
+
+        // The screen the fixture test pins, with the border's first frame
+        // on top: that is what shows when the key arrives straight away.
+        let mut want = Game::new(Qb::headless(640, 350), 1);
+        want.qb.screen_mode(0);
+        want.qb.color(15, Some(0));
+        want.qb.cls();
+        want.draw_intro_text();
+        want.qb.color(4, Some(0));
+        want.sparkle_frame(0);
+        assert!(g.qb.screen.pixels == want.qb.screen.pixels);
     }
 }

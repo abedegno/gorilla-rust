@@ -13,19 +13,50 @@ exclude_globs = [
     "src/main.rs",
     # A development tool for rendering screens to files.
     "examples/**",
+    # The browser build. It only compiles for wasm32, so a native run
+    # would report every mutant in it as missed. The Playwright tests
+    # cover it instead.
+    "src/web.rs",
+    "src/qb/backend/web.rs",
 ]
 
+# These match cargo-mutants' mutant names, which look like
+# "src/qb/fixture.rs:56:5: replace art -> String with String::new()":
+# the file, the position, and the function with its impl type, but no
+# module path.
 exclude_re = [
     # Opening the window and reading its keyboard need a display.
     "Qb::windowed",
-    "Display::",
     "key_to_char",
     "shift_char",
-    # The picture of the first difference that a failing fixture test
-    # prints. Only a failing test ever shows it.
-    "fixture::art",
     # Sound needs an audio device, and CI runners have none.
     "Audio::new",
     "Audio::play",
     "SquareWave",
+    # Opening the window needs a display. cargo-mutants 27 does not apply
+    # these patterns to struct field deletions, so the three it makes from
+    # Display::open's WindowOptions still show up as missed. They are
+    # expected.
+    "Display::",
+    # The picture of the first difference that a failing fixture test
+    # prints. Only a failing test ever shows it.
+    "fixture\\.rs:.* in art$",
+    "replace art -> String",
+    # Equivalent mutants: no input can tell them apart from the original.
+    # Only ones that can be named without a line number are listed here;
+    # the rest are in reference/NOTES.md, "Mutants that survive on purpose".
+    # ega_rgb ORs together channels whose bits never overlap, so | and ^
+    # agree.
+    "screen\\.rs:.*replace \\| with \\^ in ega_rgb",
+    # The clip's outcodes are the same: one bit per edge. The last of the
+    # four only lets through lines lying wholly off one edge, which then
+    # draw nothing, because every pixel is clipped as it is set.
+    "screen\\.rs:.*replace \\| with \\^ in Screen::clip",
+    # to_rgba's reserve only sizes the allocation.
+    "screen\\.rs:.*replace \\* with [+/] in Screen::to_rgba",
+    # Zero wind returns before the arrow's direction is chosen.
+    "replace > with >= in Game::draw_wind_arrow",
+    # Without the sleep, wait_ms spins on the clock to the same deadline.
+    # Only the CPU use differs.
+    "replace sleep_ms with \\(\\)",
 ]

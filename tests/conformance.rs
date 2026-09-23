@@ -232,6 +232,34 @@ fn paint_terminates_when_the_fill_differs_from_the_border() {
 }
 
 #[test]
+fn a_fill_through_many_narrow_gaps_still_finishes() {
+    // One pixel wide columns across the whole screen, joined along the
+    // top: a single region that makes the fill examine each of its
+    // hundred thousand runs. The loop's safety cap must sit well above
+    // what a legitimate fill like this needs.
+    let mut s = Screen::new(640, 350);
+    for x in (0..640).step_by(2) {
+        s.line(x, 10, x, 349, 5);
+    }
+    s.paint(1, 5, 7, 5);
+    assert_eq!(s.point(1, 349), 7);
+    assert_eq!(s.point(639, 349), 7);
+    assert_eq!(s.point(0, 349), 5);
+}
+
+#[test]
+fn a_box_filled_past_the_edges_stops_at_them() {
+    let mut s = Screen::new(640, 350);
+    s.line_fill(600, 300, 700, 400, 4);
+    s.line_fill(-50, -50, 10, 10, 2);
+    assert_eq!(s.point(639, 349), 4);
+    assert_eq!(s.point(599, 349), 0);
+    assert_eq!(s.point(0, 0), 2);
+    assert_eq!(s.point(10, 10), 2);
+    assert_eq!(s.point(11, 11), 0);
+}
+
+#[test]
 fn paint_on_a_pixel_already_the_border_colour_does_nothing() {
     let mut s = Screen::new(32, 32);
     s.cls(0);
@@ -456,6 +484,25 @@ fn drawing_a_gorilla_captures_the_matching_sprite() {
 }
 
 #[test]
+fn each_pose_is_captured_into_its_own_sprite() {
+    // One gorilla per pose, each on a clear screen, so the sprite must be
+    // exactly what was drawn and nothing else.
+    for arms in [1, 2, 3] {
+        let mut g = Game::new(Qb::headless(640, 350), 1);
+        g.draw_gorilla(100, 150, arms);
+        let want = g.qb.screen.get(85, 149, 114, 178);
+        let slots = [&g.gor_r, &g.gor_l, &g.gor_d];
+        for (slot, sprite) in slots.into_iter().enumerate() {
+            if slot as i32 + 1 == arms {
+                assert_eq!(*sprite, want, "pose {arms} captured the wrong picture");
+            } else {
+                assert_eq!(sprite.w, 0, "pose {arms} also filled slot {}", slot + 1);
+            }
+        }
+    }
+}
+
+#[test]
 fn the_city_drawing_matches_the_original() {
     // Six buildings with fixed sizes and every window lit, so no random
     // numbers are involved. It exercises the outline, the body and both
@@ -476,6 +523,35 @@ fn the_city_drawing_matches_the_original() {
 }
 
 #[test]
+fn each_building_is_outlined_in_the_background_colour() {
+    // The outline is drawn in colour 0, so on the blank screen of the
+    // fixture above it cannot be seen. In the game it is what leaves the
+    // black gap between buildings.
+    let mut g = Game::new(Qb::headless(640, 350), 1);
+    g.qb.screen.line_fill(0, 0, 639, 349, 9);
+    g.draw_building(100, 40, 60, 5, &mut |_| 14);
+    let px = |x, y| g.qb.screen.pixel_at(x, y);
+    // The outline runs from (x - 1, 336) to (x + width + 1, 335 - height - 1).
+    for (x, y) in [
+        (99, 336),
+        (141, 336),
+        (99, 274),
+        (141, 274),
+        (120, 274),
+        (99, 300),
+        (141, 300),
+    ] {
+        assert_eq!(px(x, y), 0, "({x},{y}) is on the outline");
+    }
+    for (x, y) in [(98, 300), (142, 300), (120, 273), (120, 337)] {
+        assert_eq!(px(x, y), 9, "({x},{y}) is outside the outline");
+    }
+    // Inside the outline is the building's own colour.
+    assert_eq!(px(100, 275), 5);
+    assert_eq!(px(140, 335), 5);
+}
+
+#[test]
 fn both_sun_moods_match_the_original() {
     let mut g = Game::new(Qb::headless(640, 350), 1);
     // The listing draws the sun at the middle of the screen. The probe
@@ -483,6 +559,34 @@ fn both_sun_moods_match_the_original() {
     g.do_sun_at(160, false);
     g.do_sun_at(480, true);
     fixture::assert_matches(&g.qb.screen, "sun");
+}
+
+#[test]
+fn the_sun_clears_exactly_its_own_box_first() {
+    // DoSun blanks (x - 22, y - 18)-(x + 22, y + 18) before drawing, which
+    // is how the shocked face gives way to the smile. On a screen that is
+    // not background, the edge of that box shows.
+    let mut g = Game::new(Qb::headless(640, 350), 1);
+    g.qb.screen.line_fill(0, 0, 639, 349, 5);
+    g.do_sun_at(320, false);
+    let px = |x, y| g.qb.screen.pixel_at(x, y);
+    for (x, y) in [(298, 7), (342, 7), (298, 43), (342, 43)] {
+        assert_eq!(px(x, y), 0, "({x},{y}) is inside the box");
+    }
+    for (x, y) in [(297, 25), (343, 25), (320, 6), (320, 44)] {
+        assert_eq!(px(x, y), 5, "({x},{y}) is outside the box");
+    }
+}
+
+#[test]
+fn the_game_draws_the_sun_in_the_middle() {
+    for mouth in [false, true] {
+        let mut a = Game::new(Qb::headless(640, 350), 1);
+        a.do_sun(mouth);
+        let mut b = Game::new(Qb::headless(640, 350), 1);
+        b.do_sun_at(320, mouth);
+        assert!(a.qb.screen.pixels == b.qb.screen.pixels, "mouth {mouth}");
+    }
 }
 
 #[test]
@@ -506,4 +610,131 @@ fn the_banana_position_rounds_rather_than_truncating() {
     assert_ne!(lit(100.6, 50.6), lit(100.0, 50.0), "and not where 100 does");
     // .5 rounds to even, the same rule PUT uses everywhere else.
     assert_eq!(lit(100.5, 50.5), lit(100.0, 50.0), "half to even");
+}
+
+// The three tests below replay reference/probes/EDGE*.BAS, which draw what
+// the game itself never does: lines, circles and fills that meet the edges
+// of the screen. Mutation testing showed the clipping, arc and fill code
+// for those cases was pinned by nothing, so they were measured.
+
+#[test]
+fn lines_leaving_the_screen_match_the_original() {
+    // Through each edge at several slopes, two that never enter the screen
+    // (the original draws nothing for them), and two along the edges.
+    let mut s = Screen::new(640, 350);
+    s.line(320, 175, -100, 100, 1);
+    s.line(320, 175, -40, 400, 2);
+    s.line(320, 175, 700, 40, 3);
+    s.line(320, 175, 900, 600, 4);
+    s.line(320, 175, 360, -300, 5);
+    s.line(320, 175, 100, -20, 6);
+    s.line(320, 175, 330, 500, 9);
+    s.line(-50, -50, 700, 400, 10);
+    s.line(-50, 360, 700, 360, 11);
+    s.line(-10, -10, -5, 200, 12);
+    s.line(0, 0, 639, 0, 13);
+    s.line(639, 0, 639, 349, 14);
+    s.line(700, 200, -60, 210, 15);
+    fixture::assert_matches(&s, "edgeline");
+}
+
+#[test]
+// The probe says 3.14, not PI, and the arc ends where 3.14 puts it.
+#[allow(clippy::approx_constant)]
+fn circles_and_arcs_at_the_edges_match_the_original() {
+    let mut s = Screen::new(640, 350);
+    s.circle(10.0, 60.0, 40.0, 7, None, None, None);
+    s.circle(630.0, 200.0, 30.0, 12, None, None, Some(2.5));
+    s.circle(300.0, 5.0, 25.0, 11, None, None, Some(0.4));
+    s.circle(500.0, 345.0, 20.0, 10, None, None, None);
+    s.circle(320.0, 175.0, 60.0, 9, None, None, Some(-1.57));
+    // An arc at an aspect above 1, one with a start and no end, one with an
+    // end and no start, and one whose start is past its end, so it wraps
+    // round through zero.
+    s.circle(150.0, 250.0, 40.0, 15, Some(0.0), Some(3.14), Some(2.0));
+    s.circle(240.0, 290.0, 30.0, 14, Some(1.5), None, None);
+    s.circle(420.0, 100.0, 30.0, 13, None, Some(2.0), None);
+    s.circle(560.0, 110.0, 35.0, 6, Some(4.0), Some(1.0), Some(3.0));
+    fixture::assert_matches(&s, "edgecirc");
+}
+
+#[test]
+fn fills_reaching_the_edges_match_the_original() {
+    let mut s = Screen::new(640, 350);
+    s.line(560, 0, 639, 80, 5);
+    s.paint(630, 5, 6, 5);
+    s.line(0, 270, 80, 349, 5);
+    s.paint(5, 345, 4, 5);
+    s.line_box(250, 120, 390, 230, 5);
+    s.paint(320, 175, 2, 5);
+    // Everything around the box: this fill touches all four edges.
+    s.paint(320, 20, 3, 5);
+    fixture::assert_matches(&s, "edgepnt");
+}
+
+#[test]
+fn arcs_at_other_aspects_are_eight_pixels_from_the_original() {
+    let mut s = Screen::new(640, 350);
+    let pi = std::f64::consts::PI;
+    s.circle(
+        120.0,
+        100.0,
+        40.0,
+        15,
+        Some(3.0 * pi / 4.0),
+        Some(5.0 * pi / 4.0),
+        Some(-1.57),
+    );
+    s.circle(
+        320.0,
+        100.0,
+        40.0,
+        14,
+        Some(3.0 * pi / 4.0),
+        Some(5.0 * pi / 4.0),
+        Some(1.57),
+    );
+    s.circle(
+        520.0,
+        100.0,
+        40.0,
+        13,
+        Some(3.0 * pi / 4.0),
+        Some(5.0 * pi / 4.0),
+        Some(0.5),
+    );
+    s.circle(
+        120.0,
+        250.0,
+        40.0,
+        12,
+        Some(15.0 * pi / 8.0),
+        Some(pi / 4.0),
+        Some(-1.57),
+    );
+    s.circle(
+        320.0,
+        250.0,
+        40.0,
+        11,
+        Some(15.0 * pi / 8.0),
+        Some(pi / 4.0),
+        Some(1.57),
+    );
+    s.circle(
+        520.0,
+        250.0,
+        40.0,
+        10,
+        Some(7.0 * pi / 4.0),
+        Some(pi / 4.0),
+        Some(-0.75),
+    );
+    // Not exact, and pinned at exactly how far off it is. Every remaining
+    // pixel is an endpoint one row out on the arcs at aspect 0.5 and 1.57,
+    // plus one at the start of the lower -1.57 arc; see reference/NOTES.md.
+    // The game only draws arcs at the default aspect, which are exact.
+    let (_, _, want) = fixture::load("arcasp");
+    let differ = s.pixels.iter().zip(&want).filter(|(a, b)| a != b).count();
+    assert_eq!(differ, 8, "arcasp: {differ} pixels differ, 8 expected");
 }

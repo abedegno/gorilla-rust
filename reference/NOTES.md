@@ -129,7 +129,11 @@ The horizontal radius stays at `r` and the vertical radius becomes
 ry = r * (1 - frac(abs(aspect)))
 ```
 
-Seven samples fit it exactly.
+Seven samples fit it exactly. An eighth, a radius of 60 at -1.57 in
+`EDGECIRC.BAS`, needs the factor between 0.4273 and 0.4298, just below 0.43.
+The fraction behaves as if held in 256ths: `1 - 146 / 256 = 0.4297`, where
+146 is `1.57 * 256` rounded and taken mod 256. The other samples are whole
+multiples of 1/256, so they are unchanged, and the port uses the 256ths form.
 
 | aspect | frac | predicted k | measured k |
 |---|---|---|---|
@@ -177,6 +181,20 @@ QBasic also clips to the viewport before it rasterises. The original draws
 `LINE (-50, 330)-(700, 340)` as the rasterisation of (0, 331)-(639, 339),
 which is a different set of pixels from the on screen part of the whole line.
 The intersection is rounded to the nearest pixel.
+
+`EDGELINE.BAS` draws thirteen lines that cross every edge and corner, and pins
+the clip down. It is Cohen-Sutherland, one edge at a time: an end outside
+both a vertical and a horizontal edge is first moved to the left or right
+edge, and only then to the top or bottom. Each intermediate point is rounded
+to a pixel before the next step, and the rounding carries. So
+`LINE (-50, -50)-(700, 400)` is clipped to (33, 0)-(616, 349). The line itself
+crosses y = 349 at x = 615. The port gets 616 because the right edge moved
+that end to (639, 363) first.
+
+Then the line is drawn from the end with the smaller x, whichever order the
+ends were given in. The rasteriser's bias is not symmetric, so the order
+shows. A clip without that ordering is 1777 pixels out on `EDGELINE.BAS`;
+with both, it is exact, and every earlier line fixture is still exact too.
 
 ## CIRCLE rasterises a circle and then scales it
 
@@ -343,7 +361,17 @@ column loop's exit condition `LOOP UNTIL c >= x + BWidth - 3`. The heights
 include 12 and 23, which are small enough to test the window loop's lower
 bound, and 300, which is taller than the screen's usable height.
 
-## Arc endpoints: an inconsistency that must be kept
+## Arc endpoints
+
+> Superseded, 23 September 2026. `EDGECIRC.BAS` and a fresh capture of
+> `ARCASP.BAS` (now `fixtures/arcasp.bin`) show the endpoints scale the same
+> axis by the same factor as the rest of the arc: x by `1 / a` above 1, y by
+> the 256ths factor below 0. They still round half to even where the body
+> rounds half away, which is why routing them through the body's own
+> `place` got four pixels wrong. That leaves ARCASP 8 pixels out, down from 18,
+> all at endpoints of the arcs at 0.5 and 1.57 and one at the start of the
+> lower -1.57 arc. The test pins that count. Everything below is the earlier
+> reading, kept for the record.
 
 `Screen::circle` applies the aspect one way for the body of an arc and another
 way for its two explicit endpoints. That looks like a bug. It is not, or rather
@@ -590,6 +618,11 @@ a representative frame of the port beside a capture of the running original.
 All five base names are eight characters or fewer and none collides with a
 file already in the bundle, which are the two traps recorded above.
 
+`EDGELINE.BAS`, `EDGECIRC.BAS` and `EDGEPNT.BAS` were added on 23 September
+2026 for lines, circles and fills that leave the screen. The fill was
+already exact. The other two found the clip order and the 256ths factor
+recorded above.
+
 ### Left outstanding
 
 - DoExplosion's step size, for the reason given above.
@@ -665,3 +698,54 @@ Everything here is deliberate.
 5. The listing `BEEP`s on an unrecognised key in `GetNum#`; the port plays
    800 Hz for a quarter second, which is what QBasic's BEEP is, but the
    duration was not measured.
+
+## Mutants that survive on purpose
+
+The weekly Mutation testing run changes the code one small way at a time
+and lists each change no test noticed. `.cargo/mutants.toml` leaves out
+what needs a window or a sound card, and the equivalent mutants it can
+name without a line number. The rest are here, so a run can be read
+against this list: anything missing from it is a real gap.
+
+They are named by function and change, not by line, because the lines
+move.
+
+**Equivalent: no input can tell them from the original.**
+
+| where | change | why it cannot show |
+|---|---|---|
+| `bresenham_circle` | `d < 0` to `<=` | `d` starts odd and only ever moves by even steps, so it is never 0 |
+| `Screen::line` | the swap's `x1 > x2` to `>=` | only swaps the ends of a vertical line, which covers the same pixels |
+| `Screen::line`'s `sign` | `>` to `>=`, `<` to `<=` | a sign of 0 only ever multiplies a zero span |
+| `Screen::circle` | `a > 1.0` to `>=`, both places | at an aspect of exactly 1 both branches scale by 1 |
+| `Screen::paint` | the bounds tests, the push test, the step counter | each popped point's bounds are checked again before it is filled, so these change the work done, not the pixels |
+| `Screen::paint` | the cap's `8 * w * h` to `8 + w * h` | a real fill stays under both; only the margin shrinks |
+| `Qb::cls_view` | the right edge's `width - 1` | `line_fill` clamps it to the screen anyway |
+| `Qb::wait_until` | `until - now` | only changes how finely the wait is sliced; the loop checks the clock again |
+| `Qb::present`, `Qb::play`, `Qb::beep` | whole body to `Ok(())` | headless has no display and muted sound, so they have nothing to do |
+| `Trajectory::at` | `* (ScrHeight / 350)` to `/` | the factor is exactly 1 in mode 9 |
+| `make_city_scape` | the flattening test and its body | unreachable: the tallest building the generator can make is 295, and flattening needs over 310 |
+| `make_city_scape` | `b_height < HT_INC` to `<=` | at exactly 10 it sets 10 |
+| `draw_gorilla` | `fi - 0.1` to `+`, both places | `Scl` rounds both to `fi` |
+| `draw_gorilla` | the legs' `9 * PI / 8` to `%` | the extra arc falls inside the gorilla; the `gorilla` capture is unchanged |
+| `explode_ball` | the erase circles' limit | the ball covers everything they would erase |
+
+**Visible only while something moves.** Every capture is of a screen at
+rest, and these only change a frame that is drawn over a moment later.
+
+| where | change | what covers it |
+|---|---|---|
+| `do_explosion` | the first loop's `<=` | the second loop erases the whole crater to the background |
+| `gorilla_intro` | the earlier frames' `x + 47` to `x * 47` | that is off the right edge, and the last frame is drawn in the right place |
+| `plot_shot` | the throwing pose's `player == 1` | the arms down pose replaces it 0.1 seconds later |
+| `plot_shot` | `!shot_in_sun && !impact` to `\|\|` | a banana drawn in the sun is XORed off again on the next step |
+| `plot_shot` | `!self.sun_hit` deleted | the shocked face is drawn from the second sample in the sun instead of the first |
+| `plot_shot` | `y > 0.0` to `>=` | only differs when the banana is at exactly y = 0 |
+
+**Not measured.** `Screen::circle`'s `a < 0.0` to `<=`, in both places,
+differs only at an aspect of exactly 0. What QBasic does there has not
+been captured, and the game never asks for it.
+
+**Device.** cargo-mutants 27 does not apply `exclude_re` to struct field
+deletions, so the three from `Display::open`'s `WindowOptions` are listed
+although the window is excluded.

@@ -203,4 +203,26 @@ mod tests {
         assert_eq!(q.text.row, 9, "the cursor goes to the top of the viewport");
         assert_eq!(q.text.col, 1);
     }
+
+    #[test]
+    fn print_wraps_after_the_last_column_not_at_it() {
+        // Started at column 79 so that wrapping at 80 instead of after it
+        // lands the third character somewhere different.
+        let mut q = Qb::headless(640, 350);
+        q.locate(3, 79);
+        q.print("ABC");
+        assert_eq!(
+            (q.text.row, q.text.col),
+            (4, 2),
+            "C is the first character of row 4"
+        );
+    }
+
+    #[test]
+    fn println_moves_to_the_start_of_the_next_row() {
+        let mut q = Qb::headless(640, 350);
+        q.locate(5, 10);
+        q.println("hi");
+        assert_eq!((q.text.row, q.text.col), (6, 1));
+    }
 }

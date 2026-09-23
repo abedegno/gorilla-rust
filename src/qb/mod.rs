@@ -35,6 +35,8 @@ pub struct Qb {
     pub audio: backend::Audio,
     display: Option<backend::Display>,
     keys: VecDeque<char>,
+    answers: VecDeque<char>,
+    answering: bool,
 }
 
 impl Qb {
@@ -52,6 +54,8 @@ impl Qb {
             audio,
             display,
             keys: VecDeque::new(),
+            answers: VecDeque::new(),
+            answering: false,
         }
     }
 
@@ -76,6 +80,24 @@ impl Qb {
 
     pub fn push_key(&mut self, c: char) {
         self.keys.push_back(c);
+    }
+
+    /// Keys a test types one at a time, each only when the game reads the
+    /// keyboard and finds nothing waiting, the way a player answers a
+    /// prompt. Unlike `push_key`, these survive `clear_keys`, so they can
+    /// drive the prompts that flush the buffer first, as GetNum does.
+    ///
+    /// Once a test has typed answers, reading the keyboard after the last
+    /// one is used panics. Headless, nothing else could ever press a key,
+    /// so the alternative is a test that hangs instead of failing.
+    pub fn type_answers(&mut self, s: &str) {
+        self.answers.extend(s.chars());
+        self.answering = true;
+    }
+
+    /// How many typed answers the game has not read yet.
+    pub fn typed_answers_left(&self) -> usize {
+        self.answers.len()
     }
 
     /// Show the framebuffer and collect keyboard input. Every waiting call
@@ -132,7 +154,12 @@ impl Qb {
 
     pub fn inkey(&mut self) -> Result<Option<char>> {
         self.pump()?;
-        Ok(self.keys.pop_front())
+        let key = self.keys.pop_front().or_else(|| self.answers.pop_front());
+        assert!(
+            key.is_some() || !self.answering,
+            "the game read the keyboard after the typed answers ran out"
+        );
+        Ok(key)
     }
 
     /// Discards whatever is in the keyboard buffer, e.g. before a fresh
@@ -248,6 +275,29 @@ mod tests {
     }
 
     #[test]
+    fn typed_answers_survive_a_flush_and_come_after_waiting_keys() {
+        let mut q = Qb::headless(64, 32);
+        q.type_answers("xy");
+        q.push_key('a');
+        assert_eq!(q.inkey().unwrap(), Some('a'));
+        q.push_key('b');
+        q.clear_keys();
+        assert_eq!(q.inkey().unwrap(), Some('x'));
+        assert_eq!(q.typed_answers_left(), 1);
+        assert_eq!(q.inkey().unwrap(), Some('y'));
+        assert_eq!(q.typed_answers_left(), 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "typed answers ran out")]
+    fn reading_past_the_typed_answers_fails_rather_than_hangs() {
+        let mut q = Qb::headless(64, 32);
+        q.type_answers("x");
+        q.inkey().unwrap();
+        q.inkey().unwrap();
+    }
+
+    #[test]
     fn inkey_drains_the_queue_then_returns_none() {
         let mut q = Qb::headless(64, 32);
         q.push_key('a');
@@ -298,6 +348,13 @@ mod tests {
         assert_eq!(val("abc"), 0.0, "no numeric prefix at all");
         assert_eq!(val(""), 0.0);
         assert_eq!(val("-"), 0.0, "a sign with no digits");
+        assert_eq!(val("1e+3"), 1000.0, "an exponent may carry a sign");
+        assert_eq!(val("2e-1"), 0.2);
+        assert_eq!(
+            val("1e+"),
+            1.0,
+            "a signed exponent with no digits is not part of it"
+        );
         assert_eq!(val("."), 0.0);
     }
 
@@ -329,5 +386,26 @@ mod tests {
             ms: 100.0,
         };
         assert_eq!(a.play(&[note], true), None);
+    }
+
+    #[test]
+    fn cls_clears_the_whole_screen_and_homes_the_cursor() {
+        let mut q = Qb::headless(64, 32);
+        q.screen.cls(7);
+        q.locate(5, 9);
+        q.cls();
+        assert!(q.screen.pixels.iter().all(|&p| p == q.text.bg));
+        assert_eq!((q.text.row, q.text.col), (1, 1));
+    }
+
+    #[test]
+    fn wait_ms_waits_real_time_whatever_the_speed() {
+        // --speed shortens rests, not how long a tune sounds.
+        let mut q = Qb::headless(64, 32);
+        q.speed = 1000.0;
+        let t = std::time::Instant::now();
+        pollster::block_on(q.wait_ms(60.0)).unwrap();
+        let ms = t.elapsed().as_millis();
+        assert!((60..600).contains(&ms), "wait_ms(60) took {ms} ms");
     }
 }

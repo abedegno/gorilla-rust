@@ -235,10 +235,10 @@ impl Game {
     /// an underscore cursor, and rejects anything over 360 on Enter.
     ///
     /// It clears the keyboard buffer first, matching the listing's
-    /// `WHILE INKEY$ <> "": WEND`, which means headless it never terminates
-    /// and cannot be driven from a test. The per key logic therefore lives in
-    /// `get_num_key` above, which is where the tests point. Do not move it
-    /// back inline: it looks testable and is not.
+    /// `WHILE INKEY$ <> "": WEND`, so keys pushed before it runs are lost.
+    /// A test drives it with `Qb::type_answers` instead. The per key logic
+    /// lives in `get_num_key` above, where it can be tested one key at a
+    /// time.
     pub async fn get_num(&mut self, row: i32, col: i32) -> Result<f64> {
         let mut result = String::new();
         self.qb.clear_keys();
@@ -642,6 +642,9 @@ mod tests {
         assert_eq!(classify(SUNATTR as i32, 10.0), Sample::Sun);
         // The same colour below SunHt is a building, not the sun.
         assert_eq!(classify(SUNATTR as i32, 300.0), Sample::Impact);
+        // SunHt itself is already below the sun.
+        assert_eq!(classify(SUNATTR as i32, SUN_HT as f64 - 0.5), Sample::Sun);
+        assert_eq!(classify(SUNATTR as i32, SUN_HT as f64), Sample::Impact);
         assert_eq!(classify(5, 10.0), Sample::Impact);
         // POINT gives -1 off the screen, which is an impact, not sky.
         assert_eq!(classify(-1, 10.0), Sample::Impact);
@@ -659,8 +662,182 @@ mod tests {
         // Far across, or below the sun: out.
         assert!(!sun_still_shading(true, mid + 21.0, 10.0));
         assert!(!sun_still_shading(true, mid, SUN_HT as f64 + 1.0));
+        // Both limits are inclusive: exactly SunHt down, or 20 to the left.
+        assert!(sun_still_shading(true, mid, SUN_HT as f64));
+        assert!(sun_still_shading(true, mid - 20.0, 10.0));
+        assert!(!sun_still_shading(true, mid - 21.0, 10.0));
         // And it never turns itself back on.
         assert!(!sun_still_shading(false, mid, 10.0));
+    }
+
+    #[test]
+    fn a_banana_on_the_left_half_blows_up_player_one() {
+        // ExplodeGorilla decides who was hit by which half of the screen
+        // the banana is in, and the middle column belongs to player 2.
+        let mut g = quiet_game(1);
+        g.gorilla_x = [100, 500];
+        g.gorilla_y = [200, 200];
+        for (x, want) in [(10.0, 1), (319.5, 1), (320.0, 2), (630.0, 2)] {
+            let hit = pollster::block_on(g.explode_gorilla(x, 200.0)).unwrap();
+            assert_eq!(hit, want, "a banana at x {x}");
+        }
+    }
+
+    #[test]
+    fn the_winner_dances_where_they_stand() {
+        for winner in [1usize, 2] {
+            let mut g = quiet_game(1);
+            for arms in [crate::game::LEFTUP, crate::game::RIGHTUP] {
+                g.draw_gorilla(300, 100, arms);
+            }
+            g.qb.screen.cls(0);
+            g.gorilla_x = [100, 500];
+            g.gorilla_y = [200, 150];
+            pollster::block_on(g.victory_dance(winner)).unwrap();
+            let (x, y) = (g.gorilla_x[winner - 1], g.gorilla_y[winner - 1]);
+            // The dance ends on the right arm up.
+            assert_eq!(
+                g.qb.screen.get(x, y, x + 29, y + 29),
+                g.gor_r,
+                "winner {winner}"
+            );
+            let lit = g.qb.screen.pixels.iter().filter(|&&p| p != 0).count();
+            let own = g.gor_r.pixels.iter().filter(|&&p| p != 0).count();
+            assert_eq!(lit, own, "winner {winner}: something else was drawn");
+        }
+    }
+
+    /// Fire one shot at a wall and report the box of wall pixels it
+    /// cleared, the player it hit, and whether it went through the sun.
+    fn crater(
+        player: usize,
+        from: (i32, i32),
+        wall: (i32, i32),
+        angle: f64,
+        velocity: f64,
+    ) -> ((i32, i32, i32, i32), usize, bool) {
+        let mut g = quiet_game(1);
+        for arms in [
+            crate::game::ARMSDOWN,
+            crate::game::LEFTUP,
+            crate::game::RIGHTUP,
+        ] {
+            g.draw_gorilla(300, 100, arms);
+        }
+        g.qb.screen.cls(0);
+        g.do_sun(false);
+        g.wind = 0;
+        g.gorilla_x = [from.0, from.0];
+        g.gorilla_y = [from.1, from.1];
+        g.qb.screen.line_fill(wall.0, 60, wall.1, 349, 5);
+        let hit =
+            pollster::block_on(g.plot_shot(from.0, from.1, aim(angle, player), velocity, player))
+                .unwrap();
+        let mut b = (i32::MAX, i32::MAX, i32::MIN, i32::MIN);
+        for y in 60..350 {
+            for x in wall.0..=wall.1 {
+                if g.qb.screen.pixel_at(x, y) != 5 {
+                    b = (b.0.min(x), b.1.min(y), b.2.max(x), b.3.max(y));
+                }
+            }
+        }
+        (b, hit, g.sun_hit)
+    }
+
+    fn quiet_game_with_sprites() -> Game {
+        let mut g = quiet_game(1);
+        for arms in [
+            crate::game::ARMSDOWN,
+            crate::game::LEFTUP,
+            crate::game::RIGHTUP,
+        ] {
+            g.draw_gorilla(300, 100, arms);
+        }
+        g.qb.screen.cls(0);
+        g.wind = 0;
+        g
+    }
+
+    #[test]
+    fn a_banana_leaving_the_side_does_not_explode_on_the_way_out() {
+        // This shot leaves the right edge at about (631, 164). The building
+        // just below its exit is close enough for the probe to find, if it
+        // still looked once the banana was off the screen.
+        let mut g = quiet_game_with_sprites();
+        g.gorilla_x = [60, 60];
+        g.gorilla_y = [300, 300];
+        g.qb.screen.line_fill(600, 170, 639, 349, 5);
+        let hit = pollster::block_on(g.plot_shot(60, 300, 45.0, 85.0, 1)).unwrap();
+        assert_eq!(hit, 0);
+        for y in 170..350 {
+            for x in 600..640 {
+                assert_eq!(g.qb.screen.pixel_at(x, y), 5, "the building lost ({x},{y})");
+            }
+        }
+    }
+
+    #[test]
+    fn a_banana_through_the_sun_leaves_it_shocked() {
+        let mut g = quiet_game_with_sprites();
+        g.do_sun(false);
+        g.gorilla_x = [150, 150];
+        g.gorilla_y = [300, 300];
+        g.qb.screen.line_fill(440, 60, 500, 349, 5);
+        pollster::block_on(g.plot_shot(150, 300, 70.0, 80.0, 1)).unwrap();
+        assert!(g.sun_hit);
+        let mut shocked = quiet_game(1);
+        shocked.do_sun(true);
+        let sun = |g: &Game| g.qb.screen.get(298, 7, 342, 43);
+        assert_eq!(sun(&g), sun(&shocked));
+    }
+
+    #[test]
+    fn shots_land_where_they_always_have() {
+        // Regression pins. The trajectory arithmetic has its own test; these
+        // check plot_shot puts it together the same way: the angle in
+        // radians, the time step, the probe, and which way player 2 throws.
+        let right = crater(1, (60, 300), (400, 460), 45.0, 60.0);
+        assert_eq!(right, ((400, 263, 406, 273), 0, false));
+        let left = crater(2, (560, 300), (150, 210), 45.0, 60.0);
+        assert_eq!(left, ((204, 303, 210, 313), 0, false));
+        // Up through the sun, which notices, and down onto the top of the
+        // wall on the far side.
+        let lob = crater(1, (150, 300), (440, 500), 70.0, 80.0);
+        assert_eq!(lob, ((445, 60, 459, 65), 0, true));
+    }
+
+    #[test]
+    fn get_num_reads_what_is_typed() {
+        let mut g = quiet_game(1);
+        g.qb.type_answers("37.5\r");
+        assert_eq!(pollster::block_on(g.get_num(2, 8)).unwrap(), 37.5);
+    }
+
+    #[test]
+    fn do_shot_reports_a_miss_and_a_hit_on_the_thrower() {
+        let mut g = quiet_game(1);
+        for arms in [
+            crate::game::ARMSDOWN,
+            crate::game::LEFTUP,
+            crate::game::RIGHTUP,
+        ] {
+            g.draw_gorilla(300, 100, arms);
+        }
+        g.qb.screen.cls(0);
+        g.wind = 0;
+        g.gorilla_x = [60, 540];
+        g.gorilla_y = [300, 300];
+        // Straight up and far out of the top, then away off the side.
+        g.qb.type_answers("80\r100\r");
+        let miss = pollster::block_on(g.do_shot(1, 60, 300)).unwrap();
+        assert_eq!(miss, (false, 0));
+
+        let down = g.gor_d.clone();
+        g.qb.screen
+            .put(60, 300, &down, crate::qb::screen::PutMode::Pset);
+        g.qb.type_answers("45\r0\r");
+        let hit = pollster::block_on(g.do_shot(1, 60, 300)).unwrap();
+        assert_eq!(hit, (true, 1));
     }
 
     #[test]
@@ -778,10 +955,8 @@ mod tests {
 
     #[test]
     fn an_angle_over_360_is_rejected_and_entry_starts_again() {
-        // These drive `get_num_key` rather than `get_num`, because `get_num`
-        // clears the keyboard buffer on entry and then waits for a key, so
-        // headless it never terminates. Same reason `sparkle_pause`'s phase
-        // arithmetic lives outside that loop.
+        // These drive `get_num_key` directly, one key at a time, so each
+        // step's result can be checked, not just the final number.
         let mut buf = String::new();
         for c in "400".chars() {
             assert_eq!(get_num_key(&mut buf, c), Entry::Continue);

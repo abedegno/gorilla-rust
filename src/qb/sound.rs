@@ -37,7 +37,6 @@ pub fn parse_mml(s: &str) -> (Vec<Note>, bool) {
         let c = chars[i];
         i += 1;
         match c {
-            ' ' => {}
             'M' => {
                 // MB, MF, MN, ML and MS. Only the first two matter here.
                 if i < chars.len() {
@@ -108,6 +107,7 @@ pub fn parse_mml(s: &str) -> (Vec<Note>, bool) {
                     ms,
                 });
             }
+            // Spaces, and anything QBasic would reject.
             _ => {}
         }
     }
@@ -280,5 +280,51 @@ mod tests {
             |a: usize, b: usize| (12.0 * (notes[b].freq / notes[a].freq).log2()).round() as i64;
         assert_eq!(step(0, 1), 1, "C# is a semitone above C");
         assert_eq!(step(0, 2), -1, "C- is a semitone below C");
+    }
+
+    fn lengths(s: &str) -> Vec<i64> {
+        parse_mml(s).0.iter().map(|n| n.ms.round() as i64).collect()
+    }
+
+    #[test]
+    fn tempo_sets_the_length_of_a_quarter_note() {
+        // A quarter note is one beat: 60000 / tempo ms.
+        assert_eq!(lengths("T60C T240C"), vec![1000, 250]);
+        // T, L and O with no number fall back to 120, 4 and 4.
+        assert_eq!(lengths("T60L8C TL C"), vec![500, 500]);
+        assert_eq!(freqs("O1C OC"), freqs("O1C O4C"));
+    }
+
+    #[test]
+    fn angle_brackets_move_one_octave() {
+        assert_eq!(freqs("O3C>C<<C"), freqs("O3C O4C O2C"));
+    }
+
+    #[test]
+    fn rests_take_their_own_length_or_the_default() {
+        let (notes, _) = parse_mml("T120L8P4R");
+        assert!(notes.iter().all(|n| n.freq == 0.0));
+        assert_eq!(lengths("T120L8P4R"), vec![500, 250]);
+    }
+
+    #[test]
+    fn each_dot_adds_half_again() {
+        assert_eq!(lengths("T120L4C.D..E"), vec![750, 1125, 500]);
+    }
+
+    #[test]
+    fn a_note_number_is_a_pitch_at_the_default_length() {
+        assert_eq!(freqs("N37"), freqs("O3C"));
+        assert_eq!(lengths("T120L8N37"), vec![250]);
+    }
+
+    #[test]
+    fn the_last_mb_or_mf_wins_and_other_m_commands_are_ignored() {
+        assert!(parse_mml("MBMFC").1);
+        assert!(!parse_mml("MFMBC").1);
+        // MN, ML and MS set articulation, which this port does not model.
+        assert_eq!(lengths("T120MNCMLCMSC"), vec![500, 500, 500]);
+        // An M with nothing after it is ignored, not read past the end.
+        assert_eq!(parse_mml("MBCM"), (parse_mml("MBC").0, false));
     }
 }
