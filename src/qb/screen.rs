@@ -191,6 +191,12 @@ impl Screen {
         let Some((x1, y1, x2, y2)) = self.clip(x1, y1, x2, y2) else {
             return;
         };
+        // Drawn with x increasing, whichever way round the ends were given.
+        let (x1, y1, x2, y2) = if x1 > x2 {
+            (x2, y2, x1, y1)
+        } else {
+            (x1, y1, x2, y2)
+        };
         let (dx, dy) = (x2 - x1, y2 - y1);
         let (adx, ady) = (dx.abs(), dy.abs());
         if adx == 0 && ady == 0 {
@@ -218,59 +224,58 @@ impl Screen {
         }
     }
 
-    /// Clip a line to the framebuffer, rounding each intersection to the
-    /// nearest pixel, and return None when it misses entirely.
+    /// Clip a line to the framebuffer, and return None when it misses.
     ///
-    /// QBasic clips before it rasterises. The difference is visible: the
-    /// original draws `LINE (-50, 330)-(700, 340)` as the rasterisation of
-    /// (0, 331)-(639, 339), which is not the same set of pixels as the on
-    /// screen part of the unclipped line.
+    /// QBasic clips before it rasterises, the Cohen-Sutherland way: one
+    /// edge at a time, the left and right edges before the top and bottom,
+    /// and it rounds each intermediate point to a pixel before clipping
+    /// against the next edge. That rounding carries through. Measured with
+    /// EDGELINE.BAS: `LINE (-50, -50)-(700, 400)` leaves the screen at
+    /// (616, 349), though the line itself crosses y = 349 at exactly
+    /// x = 615, because it was first clipped to (639, 363) at the right edge.
     fn clip(&self, x1: i32, y1: i32, x2: i32, y2: i32) -> Option<(i32, i32, i32, i32)> {
+        const LEFT: u8 = 1;
+        const RIGHT: u8 = 2;
+        const TOP: u8 = 4;
+        const BOTTOM: u8 = 8;
         let (w, h) = (self.width - 1, self.height - 1);
-        let inside = |x: i32, y: i32| (0..=w).contains(&x) && (0..=h).contains(&y);
-        if inside(x1, y1) && inside(x2, y2) {
-            return Some((x1, y1, x2, y2));
-        }
-        let (dx, dy) = ((x2 - x1) as f64, (y2 - y1) as f64);
-        let (mut t0, mut t1) = (0.0f64, 1.0f64);
-        for (p, q) in [
-            (-dx, x1 as f64),
-            (dx, (w - x1) as f64),
-            (-dy, y1 as f64),
-            (dy, (h - y1) as f64),
-        ] {
-            if p == 0.0 {
-                if q < 0.0 {
-                    return None;
-                }
+        let code = |x: i32, y: i32| -> u8 {
+            (if x < 0 { LEFT } else { 0 })
+                | (if x > w { RIGHT } else { 0 })
+                | (if y < 0 { TOP } else { 0 })
+                | (if y > h { BOTTOM } else { 0 })
+        };
+        let (mut x1, mut y1, mut x2, mut y2) = (x1, y1, x2, y2);
+        let (mut c1, mut c2) = (code(x1, y1), code(x2, y2));
+        // Each pass moves one end onto one edge, so four passes per end
+        // is more than enough.
+        for _ in 0..8 {
+            if c1 | c2 == 0 {
+                return Some((x1, y1, x2, y2));
+            }
+            if c1 & c2 != 0 {
+                return None;
+            }
+            let c = if c1 != 0 { c1 } else { c2 };
+            let (dx, dy) = ((x2 - x1) as f64, (y2 - y1) as f64);
+            let (x, y) = if c & LEFT != 0 {
+                (0, y1 + round_half_away(dy * (0 - x1) as f64 / dx))
+            } else if c & RIGHT != 0 {
+                (w, y1 + round_half_away(dy * (w - x1) as f64 / dx))
+            } else if c & TOP != 0 {
+                (x1 + round_half_away(dx * (0 - y1) as f64 / dy), 0)
             } else {
-                let r = q / p;
-                if p < 0.0 {
-                    if r > t1 {
-                        return None;
-                    }
-                    if r > t0 {
-                        t0 = r;
-                    }
-                } else {
-                    if r < t0 {
-                        return None;
-                    }
-                    if r < t1 {
-                        t1 = r;
-                    }
-                }
+                (x1 + round_half_away(dx * (h - y1) as f64 / dy), h)
+            };
+            if c == c1 {
+                (x1, y1) = (x, y);
+                c1 = code(x1, y1);
+            } else {
+                (x2, y2) = (x, y);
+                c2 = code(x2, y2);
             }
         }
-        let at = |t: f64| {
-            (
-                (x1 as f64 + t * dx).round() as i32,
-                (y1 as f64 + t * dy).round() as i32,
-            )
-        };
-        let (nx1, ny1) = at(t0);
-        let (nx2, ny2) = at(t1);
-        Some((nx1, ny1, nx2, ny2))
+        None
     }
 
     /// LINE (x1,y1)-(x2,y2), c, B
@@ -350,11 +355,13 @@ impl Screen {
         // Where an offset on the unscaled circle lands once the aspect is
         // applied. A negative aspect keeps the horizontal radius and shrinks
         // the vertical one by the fractional part, which is its own measured
-        // oddity and is recorded in reference/NOTES.md.
+        // oddity and is recorded in reference/NOTES.md. That fraction acts
+        // as if held in 1/256ths: at -1.57 the factor is 110/256 = 0.4297,
+        // not 0.43, and a radius 60 circle tells the two apart.
+        let neg_k = 1.0 - (a.abs() * 256.0).round().rem_euclid(256.0) / 256.0;
         let place = |dx: i32, dy: i32| -> (i32, i32) {
             if a < 0.0 {
-                let k = 1.0 - a.abs().fract();
-                (icx + dx, icy + round_half_away(dy as f64 * k))
+                (icx + dx, icy + round_half_away(dy as f64 * neg_k))
             } else if a > 1.0 {
                 (icx + round_half_away(dx as f64 / a), icy + dy)
             } else {
@@ -387,9 +394,16 @@ impl Screen {
         }
         for ang in [s, e] {
             // The endpoints are coordinates, so they round half to even.
-            let x = icx + cint(r * ang.cos());
-            let y = icy + cint(-r * ang.sin() * a);
-            self.pset(x, y, c);
+            // Otherwise they scale the same axis by the same factor as the
+            // rest of the arc.
+            let (ex, ey) = if a < 0.0 {
+                (r * ang.cos(), -r * ang.sin() * neg_k)
+            } else if a > 1.0 {
+                (r * ang.cos() / a, -r * ang.sin())
+            } else {
+                (r * ang.cos(), -r * ang.sin() * a)
+            };
+            self.pset(icx + cint(ex), icy + cint(ey), c);
         }
     }
 

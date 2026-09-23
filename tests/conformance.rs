@@ -507,3 +507,128 @@ fn the_banana_position_rounds_rather_than_truncating() {
     // .5 rounds to even, the same rule PUT uses everywhere else.
     assert_eq!(lit(100.5, 50.5), lit(100.0, 50.0), "half to even");
 }
+
+// The three tests below replay reference/probes/EDGE*.BAS, which draw what
+// the game itself never does: lines, circles and fills that meet the edges
+// of the screen. Mutation testing showed the clipping, arc and fill code
+// for those cases was pinned by nothing, so they were measured.
+
+#[test]
+fn lines_leaving_the_screen_match_the_original() {
+    // Through each edge at several slopes, two that never enter the screen
+    // (the original draws nothing for them), and two along the edges.
+    let mut s = Screen::new(640, 350);
+    s.line(320, 175, -100, 100, 1);
+    s.line(320, 175, -40, 400, 2);
+    s.line(320, 175, 700, 40, 3);
+    s.line(320, 175, 900, 600, 4);
+    s.line(320, 175, 360, -300, 5);
+    s.line(320, 175, 100, -20, 6);
+    s.line(320, 175, 330, 500, 9);
+    s.line(-50, -50, 700, 400, 10);
+    s.line(-50, 360, 700, 360, 11);
+    s.line(-10, -10, -5, 200, 12);
+    s.line(0, 0, 639, 0, 13);
+    s.line(639, 0, 639, 349, 14);
+    s.line(700, 200, -60, 210, 15);
+    fixture::assert_matches(&s, "edgeline");
+}
+
+#[test]
+fn circles_and_arcs_at_the_edges_match_the_original() {
+    let mut s = Screen::new(640, 350);
+    s.circle(10.0, 60.0, 40.0, 7, None, None, None);
+    s.circle(630.0, 200.0, 30.0, 12, None, None, Some(2.5));
+    s.circle(300.0, 5.0, 25.0, 11, None, None, Some(0.4));
+    s.circle(500.0, 345.0, 20.0, 10, None, None, None);
+    s.circle(320.0, 175.0, 60.0, 9, None, None, Some(-1.57));
+    // An arc at an aspect above 1, one with a start and no end, one with an
+    // end and no start, and one whose start is past its end, so it wraps
+    // round through zero.
+    s.circle(150.0, 250.0, 40.0, 15, Some(0.0), Some(3.14), Some(2.0));
+    s.circle(240.0, 290.0, 30.0, 14, Some(1.5), None, None);
+    s.circle(420.0, 100.0, 30.0, 13, None, Some(2.0), None);
+    s.circle(560.0, 110.0, 35.0, 6, Some(4.0), Some(1.0), Some(3.0));
+    fixture::assert_matches(&s, "edgecirc");
+}
+
+#[test]
+fn fills_reaching_the_edges_match_the_original() {
+    let mut s = Screen::new(640, 350);
+    s.line(560, 0, 639, 80, 5);
+    s.paint(630, 5, 6, 5);
+    s.line(0, 270, 80, 349, 5);
+    s.paint(5, 345, 4, 5);
+    s.line_box(250, 120, 390, 230, 5);
+    s.paint(320, 175, 2, 5);
+    // Everything around the box: this fill touches all four edges.
+    s.paint(320, 20, 3, 5);
+    fixture::assert_matches(&s, "edgepnt");
+}
+
+#[test]
+fn arcs_at_other_aspects_are_eight_pixels_from_the_original() {
+    let mut s = Screen::new(640, 350);
+    let pi = std::f64::consts::PI;
+    s.circle(
+        120.0,
+        100.0,
+        40.0,
+        15,
+        Some(3.0 * pi / 4.0),
+        Some(5.0 * pi / 4.0),
+        Some(-1.57),
+    );
+    s.circle(
+        320.0,
+        100.0,
+        40.0,
+        14,
+        Some(3.0 * pi / 4.0),
+        Some(5.0 * pi / 4.0),
+        Some(1.57),
+    );
+    s.circle(
+        520.0,
+        100.0,
+        40.0,
+        13,
+        Some(3.0 * pi / 4.0),
+        Some(5.0 * pi / 4.0),
+        Some(0.5),
+    );
+    s.circle(
+        120.0,
+        250.0,
+        40.0,
+        12,
+        Some(15.0 * pi / 8.0),
+        Some(pi / 4.0),
+        Some(-1.57),
+    );
+    s.circle(
+        320.0,
+        250.0,
+        40.0,
+        11,
+        Some(15.0 * pi / 8.0),
+        Some(pi / 4.0),
+        Some(1.57),
+    );
+    s.circle(
+        520.0,
+        250.0,
+        40.0,
+        10,
+        Some(7.0 * pi / 4.0),
+        Some(pi / 4.0),
+        Some(-0.75),
+    );
+    // Not exact, and pinned at exactly how far off it is. Every remaining
+    // pixel is an endpoint one row out on the arcs at aspect 0.5 and 1.57,
+    // plus one at the start of the lower -1.57 arc; see reference/NOTES.md.
+    // The game only draws arcs at the default aspect, which are exact.
+    let (_, _, want) = fixture::load("arcasp");
+    let differ = s.pixels.iter().zip(&want).filter(|(a, b)| a != b).count();
+    assert_eq!(differ, 8, "arcasp: {differ} pixels differ, 8 expected");
+}

@@ -129,7 +129,11 @@ The horizontal radius stays at `r` and the vertical radius becomes
 ry = r * (1 - frac(abs(aspect)))
 ```
 
-Seven samples fit it exactly.
+Seven samples fit it exactly. An eighth, a radius of 60 at -1.57 in
+`EDGECIRC.BAS`, needs the factor between 0.4273 and 0.4298, just below 0.43.
+The fraction behaves as if held in 256ths: `1 - 146 / 256 = 0.4297`, where
+146 is `1.57 * 256` rounded and taken mod 256. The other samples are whole
+multiples of 1/256, so they are unchanged, and the port uses the 256ths form.
 
 | aspect | frac | predicted k | measured k |
 |---|---|---|---|
@@ -177,6 +181,20 @@ QBasic also clips to the viewport before it rasterises. The original draws
 `LINE (-50, 330)-(700, 340)` as the rasterisation of (0, 331)-(639, 339),
 which is a different set of pixels from the on screen part of the whole line.
 The intersection is rounded to the nearest pixel.
+
+`EDGELINE.BAS` draws thirteen lines that cross every edge and corner, and pins
+the clip down. It is Cohen-Sutherland, one edge at a time: an end outside
+both a vertical and a horizontal edge is first moved to the left or right
+edge, and only then to the top or bottom. Each intermediate point is rounded
+to a pixel before the next step, and the rounding carries. So
+`LINE (-50, -50)-(700, 400)` is clipped to (33, 0)-(616, 349). The line itself
+crosses y = 349 at x = 615. The port gets 616 because the right edge moved
+that end to (639, 363) first.
+
+Then the line is drawn from the end with the smaller x, whichever order the
+ends were given in. The rasteriser's bias is not symmetric, so the order
+shows. A clip without that ordering is 1777 pixels out on `EDGELINE.BAS`;
+with both, it is exact, and every earlier line fixture is still exact too.
 
 ## CIRCLE rasterises a circle and then scales it
 
@@ -343,7 +361,17 @@ column loop's exit condition `LOOP UNTIL c >= x + BWidth - 3`. The heights
 include 12 and 23, which are small enough to test the window loop's lower
 bound, and 300, which is taller than the screen's usable height.
 
-## Arc endpoints: an inconsistency that must be kept
+## Arc endpoints
+
+> Superseded, 23 September 2026. `EDGECIRC.BAS` and a fresh capture of
+> `ARCASP.BAS` (now `fixtures/arcasp.bin`) show the endpoints scale the same
+> axis by the same factor as the rest of the arc: x by `1 / a` above 1, y by
+> the 256ths factor below 0. They still round half to even where the body
+> rounds half away, which is why routing them through the body's own
+> `place` got four pixels wrong. That leaves ARCASP 8 pixels out, down from 18,
+> all at endpoints of the arcs at 0.5 and 1.57 and one at the start of the
+> lower -1.57 arc. The test pins that count. Everything below is the earlier
+> reading, kept for the record.
 
 `Screen::circle` applies the aspect one way for the body of an arc and another
 way for its two explicit endpoints. That looks like a bug. It is not, or rather
@@ -589,6 +617,11 @@ a representative frame of the port beside a capture of the running original.
 `WIND.BAS`, `WINDNEG.BAS`, `CRATER.BAS`, `DEADGOR.BAS` and `GAMEOVER.BAS`.
 All five base names are eight characters or fewer and none collides with a
 file already in the bundle, which are the two traps recorded above.
+
+`EDGELINE.BAS`, `EDGECIRC.BAS` and `EDGEPNT.BAS` were added on 23 September
+2026 for lines, circles and fills that leave the screen. The fill was
+already exact. The other two found the clip order and the 256ths factor
+recorded above.
 
 ### Left outstanding
 
