@@ -456,6 +456,25 @@ fn drawing_a_gorilla_captures_the_matching_sprite() {
 }
 
 #[test]
+fn each_pose_is_captured_into_its_own_sprite() {
+    // One gorilla per pose, each on a clear screen, so the sprite must be
+    // exactly what was drawn and nothing else.
+    for arms in [1, 2, 3] {
+        let mut g = Game::new(Qb::headless(640, 350), 1);
+        g.draw_gorilla(100, 150, arms);
+        let want = g.qb.screen.get(85, 149, 114, 178);
+        let slots = [&g.gor_r, &g.gor_l, &g.gor_d];
+        for (slot, sprite) in slots.into_iter().enumerate() {
+            if slot as i32 + 1 == arms {
+                assert_eq!(*sprite, want, "pose {arms} captured the wrong picture");
+            } else {
+                assert_eq!(sprite.w, 0, "pose {arms} also filled slot {}", slot + 1);
+            }
+        }
+    }
+}
+
+#[test]
 fn the_city_drawing_matches_the_original() {
     // Six buildings with fixed sizes and every window lit, so no random
     // numbers are involved. It exercises the outline, the body and both
@@ -476,6 +495,35 @@ fn the_city_drawing_matches_the_original() {
 }
 
 #[test]
+fn each_building_is_outlined_in_the_background_colour() {
+    // The outline is drawn in colour 0, so on the blank screen of the
+    // fixture above it cannot be seen. In the game it is what leaves the
+    // black gap between buildings.
+    let mut g = Game::new(Qb::headless(640, 350), 1);
+    g.qb.screen.line_fill(0, 0, 639, 349, 9);
+    g.draw_building(100, 40, 60, 5, &mut |_| 14);
+    let px = |x, y| g.qb.screen.pixel_at(x, y);
+    // The outline runs from (x - 1, 336) to (x + width + 1, 335 - height - 1).
+    for (x, y) in [
+        (99, 336),
+        (141, 336),
+        (99, 274),
+        (141, 274),
+        (120, 274),
+        (99, 300),
+        (141, 300),
+    ] {
+        assert_eq!(px(x, y), 0, "({x},{y}) is on the outline");
+    }
+    for (x, y) in [(98, 300), (142, 300), (120, 273), (120, 337)] {
+        assert_eq!(px(x, y), 9, "({x},{y}) is outside the outline");
+    }
+    // Inside the outline is the building's own colour.
+    assert_eq!(px(100, 275), 5);
+    assert_eq!(px(140, 335), 5);
+}
+
+#[test]
 fn both_sun_moods_match_the_original() {
     let mut g = Game::new(Qb::headless(640, 350), 1);
     // The listing draws the sun at the middle of the screen. The probe
@@ -483,6 +531,34 @@ fn both_sun_moods_match_the_original() {
     g.do_sun_at(160, false);
     g.do_sun_at(480, true);
     fixture::assert_matches(&g.qb.screen, "sun");
+}
+
+#[test]
+fn the_sun_clears_exactly_its_own_box_first() {
+    // DoSun blanks (x - 22, y - 18)-(x + 22, y + 18) before drawing, which
+    // is how the shocked face gives way to the smile. On a screen that is
+    // not background, the edge of that box shows.
+    let mut g = Game::new(Qb::headless(640, 350), 1);
+    g.qb.screen.line_fill(0, 0, 639, 349, 5);
+    g.do_sun_at(320, false);
+    let px = |x, y| g.qb.screen.pixel_at(x, y);
+    for (x, y) in [(298, 7), (342, 7), (298, 43), (342, 43)] {
+        assert_eq!(px(x, y), 0, "({x},{y}) is inside the box");
+    }
+    for (x, y) in [(297, 25), (343, 25), (320, 6), (320, 44)] {
+        assert_eq!(px(x, y), 5, "({x},{y}) is outside the box");
+    }
+}
+
+#[test]
+fn the_game_draws_the_sun_in_the_middle() {
+    for mouth in [false, true] {
+        let mut a = Game::new(Qb::headless(640, 350), 1);
+        a.do_sun(mouth);
+        let mut b = Game::new(Qb::headless(640, 350), 1);
+        b.do_sun_at(320, mouth);
+        assert!(a.qb.screen.pixels == b.qb.screen.pixels, "mouth {mouth}");
+    }
 }
 
 #[test]
@@ -535,6 +611,8 @@ fn lines_leaving_the_screen_match_the_original() {
 }
 
 #[test]
+// The probe says 3.14, not PI, and the arc ends where 3.14 puts it.
+#[allow(clippy::approx_constant)]
 fn circles_and_arcs_at_the_edges_match_the_original() {
     let mut s = Screen::new(640, 350);
     s.circle(10.0, 60.0, 40.0, 7, None, None, None);
