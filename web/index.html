@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gorillas</title>
+  <meta name="description" content="QBasic GORILLAS from 1991, ported to Rust and playing in your browser.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <div class="stage">
+      <canvas id="screen" width="640" height="350" aria-label="The game screen"></canvas>
+      <button id="start" class="overlay" type="button">Click or tap to start</button>
+    </div>
+    <div class="controls">
+      <button id="mute" type="button" aria-pressed="false">Sound on</button>
+    </div>
+    <div id="keypad" role="group" aria-label="Keypad">
+      <button type="button" data-key="7">7</button>
+      <button type="button" data-key="8">8</button>
+      <button type="button" data-key="9">9</button>
+      <button type="button" data-key="Backspace" aria-label="Backspace">⌫</button>
+      <button type="button" data-key="4">4</button>
+      <button type="button" data-key="5">5</button>
+      <button type="button" data-key="6">6</button>
+      <button type="button" data-key="V">V</button>
+      <button type="button" data-key="1">1</button>
+      <button type="button" data-key="2">2</button>
+      <button type="button" data-key="3">3</button>
+      <button type="button" data-key="P">P</button>
+      <button type="button" data-key="0">0</button>
+      <button type="button" data-key=".">.</button>
+      <button type="button" data-key="Enter" class="enter" aria-label="Enter">⏎</button>
+    </div>
+    <p id="error" role="alert" hidden></p>
+  </main>
+  <footer>
+    <a href="https://github.com/abedegno/gorilla-rust">Source</a>
+    ·
+    <a href="https://github.com/abedegno/gorilla-rust/releases">Download for Windows, macOS and Linux</a>
+  </footer>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

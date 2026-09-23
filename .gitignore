@@ -14,3 +14,9 @@ __pycache__/
 
 # cargo-mutants output
 mutants.out*/
+
+# Browser build and its tests
+/web/pkg/
+/web/node_modules/
+/web/test-results/
+/web/playwright-report/

@@ -1,0 +1,93 @@
+:root {
+  color-scheme: dark;
+  --bg: #000;
+  --fg: #aaa;
+  --accent: #55ffff;
+  --button: #222;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.stage {
+  position: relative;
+  width: min(100%, 1280px);
+}
+
+/* The canvas switches between 640x350 and 640x400. The box keeps the
+   graphics screen's shape and letterboxes the text screens inside it, as
+   the native window does, so the page never jumps. */
+#screen {
+  display: block;
+  width: 100%;
+  aspect-ratio: 640 / 350;
+  object-fit: contain;
+  background: #000;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--accent);
+  font: inherit;
+  font-size: clamp(18px, 4vw, 32px);
+  cursor: pointer;
+}
+
+.controls button,
+#keypad button {
+  border: 1px solid #555;
+  background: var(--button);
+  color: var(--fg);
+  font: inherit;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.controls button { padding: 6px 14px; }
+
+#keypad { display: none; }
+
+@media (pointer: coarse) {
+  #keypad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    width: min(100%, 420px);
+  }
+  #keypad button {
+    min-height: 56px;
+    font-size: 22px;
+  }
+  #keypad .enter { grid-column: span 2; }
+}
+
+#error { color: #ff5555; }
+
+footer {
+  text-align: center;
+  padding: 8px 16px 24px;
+  font-size: 14px;
+}
+
+footer a { color: var(--accent); }
