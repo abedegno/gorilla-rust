@@ -744,6 +744,53 @@ mod tests {
         (b, hit, g.sun_hit)
     }
 
+    fn quiet_game_with_sprites() -> Game {
+        let mut g = quiet_game(1);
+        for arms in [
+            crate::game::ARMSDOWN,
+            crate::game::LEFTUP,
+            crate::game::RIGHTUP,
+        ] {
+            g.draw_gorilla(300, 100, arms);
+        }
+        g.qb.screen.cls(0);
+        g.wind = 0;
+        g
+    }
+
+    #[test]
+    fn a_banana_leaving_the_side_does_not_explode_on_the_way_out() {
+        // This shot leaves the right edge at about (631, 164). The building
+        // just below its exit is close enough for the probe to find, if it
+        // still looked once the banana was off the screen.
+        let mut g = quiet_game_with_sprites();
+        g.gorilla_x = [60, 60];
+        g.gorilla_y = [300, 300];
+        g.qb.screen.line_fill(600, 170, 639, 349, 5);
+        let hit = pollster::block_on(g.plot_shot(60, 300, 45.0, 85.0, 1)).unwrap();
+        assert_eq!(hit, 0);
+        for y in 170..350 {
+            for x in 600..640 {
+                assert_eq!(g.qb.screen.pixel_at(x, y), 5, "the building lost ({x},{y})");
+            }
+        }
+    }
+
+    #[test]
+    fn a_banana_through_the_sun_leaves_it_shocked() {
+        let mut g = quiet_game_with_sprites();
+        g.do_sun(false);
+        g.gorilla_x = [150, 150];
+        g.gorilla_y = [300, 300];
+        g.qb.screen.line_fill(440, 60, 500, 349, 5);
+        pollster::block_on(g.plot_shot(150, 300, 70.0, 80.0, 1)).unwrap();
+        assert!(g.sun_hit);
+        let mut shocked = quiet_game(1);
+        shocked.do_sun(true);
+        let sun = |g: &Game| g.qb.screen.get(298, 7, 342, 43);
+        assert_eq!(sun(&g), sun(&shocked));
+    }
+
     #[test]
     fn shots_land_where_they_always_have() {
         // Regression pins. The trajectory arithmetic has its own test; these
@@ -757,6 +804,40 @@ mod tests {
         // wall on the far side.
         let lob = crater(1, (150, 300), (440, 500), 70.0, 80.0);
         assert_eq!(lob, ((445, 60, 459, 65), 0, true));
+    }
+
+    #[test]
+    fn get_num_reads_what_is_typed() {
+        let mut g = quiet_game(1);
+        g.qb.type_answers("37.5\r");
+        assert_eq!(pollster::block_on(g.get_num(2, 8)).unwrap(), 37.5);
+    }
+
+    #[test]
+    fn do_shot_reports_a_miss_and_a_hit_on_the_thrower() {
+        let mut g = quiet_game(1);
+        for arms in [
+            crate::game::ARMSDOWN,
+            crate::game::LEFTUP,
+            crate::game::RIGHTUP,
+        ] {
+            g.draw_gorilla(300, 100, arms);
+        }
+        g.qb.screen.cls(0);
+        g.wind = 0;
+        g.gorilla_x = [60, 540];
+        g.gorilla_y = [300, 300];
+        // Straight up and far out of the top, then away off the side.
+        g.qb.type_answers("80\r100\r");
+        let miss = pollster::block_on(g.do_shot(1, 60, 300)).unwrap();
+        assert_eq!(miss, (false, 0));
+
+        let down = g.gor_d.clone();
+        g.qb.screen
+            .put(60, 300, &down, crate::qb::screen::PutMode::Pset);
+        g.qb.type_answers("45\r0\r");
+        let hit = pollster::block_on(g.do_shot(1, 60, 300)).unwrap();
+        assert_eq!(hit, (true, 1));
     }
 
     #[test]

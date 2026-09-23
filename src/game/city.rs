@@ -312,6 +312,8 @@ mod tests {
         g.last_building = buildings.len();
         g.place_gorillas(&buildings);
         assert_eq!(g.gorilla_x[0], 32);
+        // And it stands Y_ADJ = 30 above the roof.
+        assert_eq!(g.gorilla_y[0], 70);
     }
 
     #[test]
@@ -361,6 +363,15 @@ mod tests {
             assert_eq!(g.wind, wind, "seed {seed} wind");
             assert_eq!(screen_hash(&g), hash, "seed {seed} picture");
         }
+    }
+
+    #[test]
+    fn a_building_is_never_lower_than_ht_inc() {
+        // Rare: the falling slope has to have come right down and the
+        // random part to be small. Seed 694 is one of the few in thousands
+        // where the last building would otherwise be under ten tall.
+        let (_, b) = built(694);
+        assert_eq!(b.last().unwrap().y, 325);
     }
 
     #[test]

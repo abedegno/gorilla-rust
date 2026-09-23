@@ -95,6 +95,11 @@ impl Qb {
         self.answering = true;
     }
 
+    /// How many typed answers the game has not read yet.
+    pub fn typed_answers_left(&self) -> usize {
+        self.answers.len()
+    }
+
     /// Show the framebuffer and collect keyboard input. Every waiting call
     /// runs it, which is what keeps the window alive while the game code
     /// waits the way the BASIC original does.
@@ -278,7 +283,9 @@ mod tests {
         q.push_key('b');
         q.clear_keys();
         assert_eq!(q.inkey().unwrap(), Some('x'));
+        assert_eq!(q.typed_answers_left(), 1);
         assert_eq!(q.inkey().unwrap(), Some('y'));
+        assert_eq!(q.typed_answers_left(), 0);
     }
 
     #[test]

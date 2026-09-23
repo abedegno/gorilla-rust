@@ -342,4 +342,23 @@ mod tests {
 
         assert_eq!(row_pixels(&rejected, 14), row_pixels(&clean, 14));
     }
+
+    #[test]
+    fn the_intro_shows_its_text_and_border_until_a_key() {
+        let mut g = Game::new(Qb::headless(640, 350), 1);
+        g.qb.type_answers(" ");
+        pollster::block_on(g.intro()).unwrap();
+        assert_eq!(g.qb.typed_answers_left(), 0, "the key should end it");
+
+        // The screen the fixture test pins, with the border's first frame
+        // on top: that is what shows when the key arrives straight away.
+        let mut want = Game::new(Qb::headless(640, 350), 1);
+        want.qb.screen_mode(0);
+        want.qb.color(15, Some(0));
+        want.qb.cls();
+        want.draw_intro_text();
+        want.qb.color(4, Some(0));
+        want.sparkle_frame(0);
+        assert!(g.qb.screen.pixels == want.qb.screen.pixels);
+    }
 }

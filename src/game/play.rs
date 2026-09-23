@@ -136,12 +136,7 @@ impl Game {
             let mut hit = false;
             while !hit {
                 j = 1 - j;
-                self.qb.locate(1, 1);
-                self.qb.print(p1);
-                self.qb.locate(1, MAX_COL - 1 - p2.len() as i32);
-                self.qb.print(p2);
-                self.qb
-                    .center(23, &format!("{}>Score<{}", total_wins[0], total_wins[1]));
+                self.draw_hud(p1, p2, total_wins);
                 let tosser = (j + 1) as usize;
 
                 let player_hit;
@@ -172,6 +167,17 @@ impl Game {
         self.qb.color(7, Some(0));
         self.qb.cls();
         Ok(total_wins)
+    }
+
+    /// The names in the top corners and the score along the bottom, redrawn
+    /// before every throw.
+    pub fn draw_hud(&mut self, p1: &str, p2: &str, total_wins: [i32; 2]) {
+        self.qb.locate(1, 1);
+        self.qb.print(p1);
+        self.qb.locate(1, MAX_COL - 1 - p2.len() as i32);
+        self.qb.print(p2);
+        self.qb
+            .center(23, &format!("{}>Score<{}", total_wins[0], total_wins[1]));
     }
 
     /// The final screen, drawn up to the point where the listing hands over
@@ -291,5 +297,39 @@ mod tests {
             let scores = pollster::block_on(g.play_game("A", "B", games)).unwrap();
             assert_eq!(scores, want, "after {games} games");
         }
+    }
+
+    #[test]
+    fn player_two_s_name_ends_two_columns_from_the_right() {
+        // LOCATE 1, MaxCol - 1 - LEN(Player2$): "Bob" fills columns 76 to
+        // 78 of 80, which in mode 9's 8 pixel cells is x 600 to 623.
+        let mut g = Game::new(crate::qb::Qb::headless(640, 350), 1);
+        g.set_screen();
+        g.draw_hud("Al", "Bob", [0, 0]);
+        let lit: Vec<i32> = (320..640)
+            .filter(|&x| (0..14).any(|y| g.qb.screen.pixel_at(x, y) != 0))
+            .collect();
+        assert!(!lit.is_empty(), "no name on the right");
+        assert!(*lit.first().unwrap() >= 600, "starts at x {}", lit[0]);
+        assert!(
+            *lit.last().unwrap() <= 623,
+            "ends at x {}",
+            lit.last().unwrap()
+        );
+    }
+
+    #[test]
+    fn a_whole_session_runs_from_the_title_to_the_end() {
+        let mut q = crate::qb::Qb::headless(640, 350);
+        q.speed = 100_000.0;
+        let mut g = Game::new(q, 1);
+        // A key for the title, default names, one point, default gravity,
+        // Play, one throw that hits the thrower, and a key to finish.
+        g.qb.type_answers(" \r\r1\r\rp45\r0\r ");
+        pollster::block_on(g.run()).unwrap();
+        assert_eq!(g.qb.typed_answers_left(), 0, "the session ended early");
+        // It ends on the cleared text screen.
+        assert_eq!(g.qb.screen.height, 400);
+        assert!(g.qb.screen.pixels.iter().all(|&p| p == 0));
     }
 }
