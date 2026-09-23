@@ -12,7 +12,7 @@ use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use wasm_bindgen::{Clamped, JsCast, JsValue};
 use web_sys::{
-    AudioContext, CanvasRenderingContext2d, HtmlCanvasElement, ImageData, OscillatorType,
+    AudioContext, CanvasRenderingContext2d, GainNode, HtmlCanvasElement, ImageData, OscillatorType,
 };
 
 /// How long `Qb::wait_ms` sleeps between pumps: about one frame.
@@ -26,6 +26,10 @@ thread_local! {
     static KEYS: RefCell<VecDeque<char>> = const { RefCell::new(VecDeque::new()) };
     /// The mute button's state, which the page can change at any time.
     static MUTED: Cell<bool> = const { Cell::new(false) };
+    /// The one gain node every tone is routed through, so the mute button
+    /// silences a tune that is already sounding, not just tunes that have
+    /// not started yet.
+    static MASTER: RefCell<Option<GainNode>> = const { RefCell::new(None) };
 }
 
 pub fn push_key(c: char) {
@@ -34,6 +38,11 @@ pub fn push_key(c: char) {
 
 pub fn set_muted(muted: bool) {
     MUTED.with(|m| m.set(muted));
+    MASTER.with(|m| {
+        if let Some(gain) = m.borrow().as_ref() {
+            gain.gain().set_value(if muted { 0.0 } else { 1.0 });
+        }
+    });
 }
 
 /// Milliseconds on the page's monotonic clock.
@@ -131,6 +140,13 @@ impl Audio {
         let ctx = AudioContext::new().ok();
         if let Some(c) = &ctx {
             let _ = c.resume();
+            if let Ok(master) = c.create_gain() {
+                master
+                    .gain()
+                    .set_value(if MUTED.with(Cell::get) { 0.0 } else { 1.0 });
+                let _ = master.connect_with_audio_node(&c.destination());
+                MASTER.with(|m| *m.borrow_mut() = Some(master));
+            }
         }
         Audio { ctx }
     }
@@ -162,7 +178,15 @@ fn tone(ctx: &AudioContext, freq: f64, at: f64, secs: f64) -> Result<(), JsValue
     let gain = ctx.create_gain()?;
     gain.gain().set_value(VOLUME);
     osc.connect_with_audio_node(&gain)?;
-    gain.connect_with_audio_node(&ctx.destination())?;
+    // Route through the master gain when there is one, so muting a tune
+    // already playing works; fall back to the destination otherwise.
+    MASTER.with(|m| -> Result<(), JsValue> {
+        match m.borrow().as_ref() {
+            Some(master) => gain.connect_with_audio_node(master)?,
+            None => gain.connect_with_audio_node(&ctx.destination())?,
+        };
+        Ok(())
+    })?;
     osc.start_with_when(at)?;
     osc.stop_with_when(at + secs)?;
     Ok(())
