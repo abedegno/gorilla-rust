@@ -6,16 +6,18 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-23
+
+### Added
+
+- A Linux build for arm64.
+
 ### Changed
 
 - macOS releases are now one universal binary for Apple silicon and Intel,
   instead of two per-architecture builds.
 - Release notes contain only that version's changes.
 - On Windows the game no longer opens a console window behind itself.
-
-### Added
-
-- A Linux build for arm64.
 
 ## [1.0.0] - 2026-09-22
 
@@ -34,4 +36,6 @@ First release. The game is complete and playable end to end.
 - Command line flags for the seed, speed, window scale and muting.
 - Tooling under `reference/` for capturing and comparing framebuffers.
 
+[Unreleased]: https://github.com/abedegno/gorilla-rust/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.1.0
 [1.0.0]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.0.0
