@@ -322,4 +322,56 @@ mod tests {
         let (_, c) = built(8);
         assert_ne!(a, c);
     }
+
+    /// FNV-1a over the screen, so a snapshot can hold a whole city in one
+    /// number.
+    fn screen_hash(g: &Game) -> u64 {
+        g.qb.screen
+            .pixels
+            .iter()
+            .fold(0xcbf2_9ce4_8422_2325, |h, &p| {
+                (h ^ p as u64).wrapping_mul(0x0100_0000_01b3)
+            })
+    }
+
+    #[test]
+    fn known_seeds_still_build_the_same_cities() {
+        // A regression pin, not a measurement: the original's city is
+        // random, so nothing can be compared with it. The invariants above
+        // allow a lot of wrong cities, and this catches any change to the
+        // generator, which would also change every game a `--seed` or
+        // `?seed=` reproduces. One seed for each of the six slopes; seed 1
+        // also pushes the wind further up and seed 17 further down.
+        // Seed, wind, picture hash, and each roof's top left corner.
+        type Case = (u64, i32, u64, &'static [(i32, i32)]);
+        #[rustfmt::skip]
+        let cases: [Case; 7] = [
+            (1, 10, 0x74ca_015a_9e5d_e4ad, &[(2, 231), (54, 282), (96, 187), (160, 196), (202, 238), (261, 255), (319, 223), (394, 234), (450, 215), (491, 151), (536, 107), (601, 109)]),
+            (16, 4, 0xf02e_68bd_3b02_2833, &[(2, 96), (77, 125), (122, 198), (177, 145), (239, 237), (311, 185), (355, 236), (426, 284), (469, 179), (515, 285), (557, 286), (607, 261)]),
+            (7, -1, 0x99c4_946d_3ac5_da83, &[(2, 229), (57, 208), (128, 186), (168, 154), (225, 141), (292, 159), (340, 202), (406, 235), (463, 208), (510, 202), (580, 262)]),
+            (19, -2, 0xbf94_3a51_5841_0abf, &[(2, 204), (63, 175), (131, 255), (204, 127), (253, 187), (326, 122), (389, 142), (460, 231), (531, 282), (579, 311)]),
+            (10, 3, 0x308e_ac7d_b4ae_c771, &[(2, 252), (44, 214), (93, 174), (133, 229), (191, 137), (267, 144), (314, 68), (375, 183), (416, 142), (471, 168), (526, 151), (586, 186)]),
+            (5, 5, 0xeefe_f4c4_973b_6820, &[(2, 161), (72, 160), (129, 127), (187, 148), (249, 161), (296, 167), (347, 154), (407, 109), (454, 201), (498, 155), (547, 111), (597, 195)]),
+            (17, -9, 0x34fd_4fbc_1e9e_bcfc, &[(2, 233), (61, 245), (132, 236), (185, 126), (261, 154), (324, 175), (387, 186), (461, 234), (520, 287), (574, 248), (615, 300)]),
+        ];
+        for (seed, wind, hash, roofs) in cases {
+            let (g, b) = built(seed);
+            let got: Vec<(i32, i32)> = b.iter().map(|b| (b.x, b.y)).collect();
+            assert_eq!(got, roofs, "seed {seed} roofs");
+            assert_eq!(g.wind, wind, "seed {seed} wind");
+            assert_eq!(screen_hash(&g), hash, "seed {seed} picture");
+        }
+    }
+
+    #[test]
+    fn two_hundred_seeds_still_build_the_same_cities() {
+        // The same pin across enough cities to reach boundaries the seven
+        // seeds above may not: widths trimmed to fit, heights clamped, and
+        // wind at the edges of its range.
+        let digest = (1..=200u64).fold(0u64, |d, seed| {
+            let (g, _) = built(seed);
+            (d ^ screen_hash(&g) ^ g.wind as u64).wrapping_mul(0x0100_0000_01b3)
+        });
+        assert_eq!(digest, 0x7dea_d10d_a88f_e8e5);
+    }
 }
