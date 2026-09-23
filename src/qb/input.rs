@@ -92,4 +92,13 @@ mod tests {
         q.clear_keys();
         assert_eq!(q.inkey().unwrap(), None);
     }
+
+    #[test]
+    fn line_input_leaves_out_control_keys() {
+        let mut q = Qb::headless(640, 350);
+        for c in "A\u{1b}B\t\r".chars() {
+            q.push_key(c);
+        }
+        assert_eq!(pollster::block_on(q.line_input("")).unwrap(), "AB");
+    }
 }
