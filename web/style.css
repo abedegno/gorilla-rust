@@ -37,8 +37,10 @@ main {
   aspect-ratio: 640 / 350;
   object-fit: contain;
   background: #000;
-  image-rendering: pixelated;
+  /* crisp-edges first, as the fallback: a browser that knows both keeps
+     the last, and pixelated is the one that keeps every pixel square. */
   image-rendering: crisp-edges;
+  image-rendering: pixelated;
 }
 
 /* On a short (landscape phone or a cramped window) viewport, width alone
