@@ -41,6 +41,16 @@ main {
   image-rendering: crisp-edges;
 }
 
+/* On a short (landscape phone or a cramped window) viewport, width alone
+   would make the canvas taller than the window, forcing the page to
+   scroll just to bring the start button fully into view. Bound it by
+   height too, so a short window never needs to scroll to start. */
+@media (max-height: 480px) {
+  #screen {
+    max-height: calc(100vh - 120px);
+  }
+}
+
 .overlay {
   position: absolute;
   inset: 0;

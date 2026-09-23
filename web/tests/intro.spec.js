@@ -33,8 +33,10 @@ test('page buttons are pointer-only: Tab and Space cannot reach or press mute', 
   await expect.poll(() => canvasDiff(page, INTRO, BORDER)).toEqual({ diff: 0 });
 
   const before = await page.locator('#mute').getAttribute('aria-pressed');
-  for (let i = 0; i < 5; i++) await page.keyboard.press('Tab');
-  await expect(page.locator('#mute')).not.toBeFocused();
+  for (let i = 0; i < 5; i++) {
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#mute')).not.toBeFocused();
+  }
 
   await page.keyboard.press('Space');
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', before);
