@@ -37,10 +37,13 @@ thread_local! {
     static CONTEXT: RefCell<Option<AudioContext>> = const { RefCell::new(None) };
 }
 
+/// Queue a key for the game's next `INKEY$` or `LINE INPUT` to read.
 pub fn push_key(c: char) {
     KEYS.with(|k| k.borrow_mut().push_back(c));
 }
 
+/// Mute or unmute. This sets the master gain as well as the flag, so a tune
+/// that is already sounding falls silent at once, not only the next one.
 pub fn set_muted(muted: bool) {
     MUTED.with(|m| m.set(muted));
     MASTER.with(|m| {

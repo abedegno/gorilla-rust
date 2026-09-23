@@ -14,7 +14,7 @@ thread_local! {
 /// Called from the start overlay's click, because a browser only lets sound
 /// begin inside a user gesture and this is where the audio context is made.
 /// A second call is refused: two games would fight over one canvas and one
-/// key queue.
+/// key queue. From here on a panic is shown in the page's `#error` element.
 #[wasm_bindgen]
 pub fn start(canvas_id: &str, seed: f64, muted: bool) -> Result<(), JsValue> {
     if STARTED.with(Cell::get) {
@@ -22,6 +22,7 @@ pub fn start(canvas_id: &str, seed: f64, muted: bool) -> Result<(), JsValue> {
     }
     let display = backend::Display::open(canvas_id)?;
     STARTED.with(|s| s.set(true));
+    std::panic::set_hook(Box::new(show_panic));
     backend::set_muted(muted);
     let qb = Qb::new(640, 350, Some(display), backend::Audio::new(false));
     let mut game = Game::new(qb, seed as u64);
@@ -41,6 +42,7 @@ pub fn push_key(key: &str) {
     }
 }
 
+/// Mute or unmute, including a tune that is already sounding.
 #[wasm_bindgen]
 pub fn set_muted(muted: bool) {
     backend::set_muted(muted);
@@ -51,4 +53,19 @@ pub fn set_muted(muted: bool) {
 #[wasm_bindgen]
 pub fn resume_audio() {
     backend::resume_audio();
+}
+
+/// Show a panic on the page. Without this a panic stops the game with the
+/// last frame still on the canvas and nothing to say why, since the message
+/// would otherwise go nowhere a player could see it.
+fn show_panic(info: &std::panic::PanicHookInfo) {
+    let message = format!("The game stopped with an error: {info}");
+    web_sys::console::error_1(&JsValue::from_str(&message));
+    let error = web_sys::window()
+        .and_then(|w| w.document())
+        .and_then(|d| d.get_element_by_id("error"));
+    if let Some(error) = error {
+        error.set_text_content(Some(&message));
+        let _ = error.remove_attribute("hidden");
+    }
 }
