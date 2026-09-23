@@ -1,21 +1,15 @@
 import { test, expect } from '@playwright/test';
-import { fixture, INTRO, BORDER, startGame, canvasDiff } from './helpers.js';
-
-// Captured from the real game after typing Alice, Bob, 1 and Enter.
-const CHOICE = fixture('choice');
+import {
+  INTRO,
+  CHOICE,
+  BORDER,
+  startGame,
+  canvasDiff,
+  typeTheCapturedAnswers,
+} from './helpers.js';
 
 async function waitForIntro(page) {
   await expect.poll(() => canvasDiff(page, INTRO, BORDER)).toEqual({ diff: 0 });
-}
-
-async function typeTheCapturedAnswers(page) {
-  await page.keyboard.type('Alice');
-  await page.keyboard.press('Enter');
-  await page.keyboard.type('Bob');
-  await page.keyboard.press('Enter');
-  await page.keyboard.type('1');
-  await page.keyboard.press('Enter');
-  await page.keyboard.press('Enter'); // the default gravity
 }
 
 /** RGB of the canvas pixels across row `y`, from column `from` to `to` inclusive. */

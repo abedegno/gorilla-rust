@@ -11,6 +11,9 @@ export function fixture(name) {
 
 export const INTRO = fixture('intro');
 
+/** Captured from the real game after typing Alice, Bob, 1 and Enter. */
+export const CHOICE = fixture('choice');
+
 /**
  * The sparkling border animates on text rows 1 and 22 and columns 1 and 80,
  * and the intro was captured without it, so those cells are left out.
@@ -21,6 +24,59 @@ export const BORDER = { excludeRows: [1, 22], excludeCols: [1, 80] };
 export async function startGame(page, query = '?seed=1&mute') {
   await page.goto('/index.html' + query);
   await page.click('#start');
+}
+
+/** Answer the prompts as the capture in CHOICE did. */
+export async function typeTheCapturedAnswers(page) {
+  await page.keyboard.type('Alice');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Bob');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('1');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter'); // the default gravity
+}
+
+/**
+ * Watch what the game does with Web Audio, from before the page loads.
+ *
+ * `window.__audio` counts the oscillators made (one per note), keeps the
+ * contexts and the latest time any note was told to stop, and lists the
+ * nodes connected straight to a destination.
+ */
+export async function spyOnAudio(page) {
+  await page.addInitScript(() => {
+    const spy = {
+      oscillators: 0,
+      contexts: [],
+      lastStop: 0,
+      toDestination: [],
+    };
+    window.__audio = spy;
+
+    const Context = window.AudioContext;
+    const createOscillator = BaseAudioContext.prototype.createOscillator;
+    BaseAudioContext.prototype.createOscillator = function () {
+      spy.oscillators++;
+      return createOscillator.call(this);
+    };
+    const stop = AudioScheduledSourceNode.prototype.stop;
+    AudioScheduledSourceNode.prototype.stop = function (when = 0) {
+      spy.lastStop = Math.max(spy.lastStop, when);
+      return stop.call(this, when);
+    };
+    const connect = AudioNode.prototype.connect;
+    AudioNode.prototype.connect = function (target, ...rest) {
+      if (target instanceof AudioDestinationNode) spy.toDestination.push(this);
+      return connect.call(this, target, ...rest);
+    };
+    window.AudioContext = class extends Context {
+      constructor(...args) {
+        super(...args);
+        spy.contexts.push(this);
+      }
+    };
+  });
 }
 
 /**
