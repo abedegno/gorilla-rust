@@ -27,9 +27,9 @@ fn a_scripted_game_runs_to_a_result() {
     for angle in [10.0, 25.0, 40.0, 55.0, 70.0, 85.0] {
         for velocity in [30.0, 60.0, 90.0] {
             let before = g.qb.screen.pixels.clone();
-            let hit = g
-                .plot_shot(g.gorilla_x[0], g.gorilla_y[0], angle, velocity, 1)
-                .expect("a headless game never quits");
+            let hit =
+                pollster::block_on(g.plot_shot(g.gorilla_x[0], g.gorilla_y[0], angle, velocity, 1))
+                    .expect("a headless game never quits");
             if g.qb.screen.pixels != before {
                 impacts += 1;
             }
@@ -49,7 +49,7 @@ fn a_crater_makes_the_screen_passable_where_it_was_not() {
     // A solid block standing in for a building.
     g.qb.screen.line_fill(300, 200, 400, 340, 5);
     assert_eq!(g.qb.screen.point(350, 250), 5);
-    g.do_explosion(350.0, 250.0).unwrap();
+    pollster::block_on(g.do_explosion(350.0, 250.0)).unwrap();
     // The explosion paints back to the background, so the collision check
     // now reads sky where it read a building before.
     assert_eq!(g.qb.screen.point(350, 250), 0, "the crater should be real");
@@ -109,7 +109,7 @@ fn the_name_and_gravity_prompts_match_the_original() {
     for c in ANSWERS.chars() {
         g.qb.push_key(c);
     }
-    g.get_inputs().expect("a headless game never quits");
+    pollster::block_on(g.get_inputs()).expect("a headless game never quits");
     g.draw_choice_menu();
     fixture::assert_matches(&g.qb.screen, "choice");
 }
@@ -170,7 +170,7 @@ fn a_crater_in_a_building_matches_the_original() {
     g.set_screen();
     g.qb.screen.cls(0);
     g.qb.screen.line_fill(260, 180, 420, 340, 5);
-    g.do_explosion(340.0, 260.0).unwrap();
+    pollster::block_on(g.do_explosion(340.0, 260.0)).unwrap();
     fixture::assert_matches(&g.qb.screen, "crater");
 }
 
@@ -200,7 +200,7 @@ fn a_gorilla_blowing_up_matches_the_original() {
     g.gorilla_y = [199, 210];
     g.draw_gorilla(120, 200, ARMSDOWN);
     g.draw_gorilla(480, 211, ARMSDOWN);
-    g.explode_gorilla(120.0, 200.0).unwrap();
+    pollster::block_on(g.explode_gorilla(120.0, 200.0)).unwrap();
     fixture::assert_matches(&g.qb.screen, "deadgorilla");
 }
 

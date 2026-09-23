@@ -46,9 +46,9 @@ impl Game {
 
     /// GorillaIntro. Draws the three gorilla poses so GET can capture them,
     /// then optionally plays the dancing intro.
-    pub fn gorilla_intro(&mut self, p1: &str, p2: &str) -> Result<()> {
+    pub async fn gorilla_intro(&mut self, p1: &str, p2: &str) -> Result<()> {
         self.draw_choice_menu();
-        let choice = self.qb.wait_key()?;
+        let choice = self.qb.wait_key().await?;
 
         let (x, y) = (278, 175);
         self.qb.screen_mode(9);
@@ -84,22 +84,22 @@ impl Game {
             // 0 is arms down, 1 is left up, 2 is right up.
             self.put_pose(x - 13, y, 0);
             self.put_pose(x + 47, y, 0);
-            self.qb.rest(1.0)?;
+            self.qb.rest(1.0).await?;
             for (i, (left, right)) in poses.into_iter().enumerate() {
                 self.put_pose(x - 13, y, left);
                 self.put_pose(x + 47, y, right);
-                self.qb.play(tunes[i])?;
-                self.qb.rest(0.3)?;
+                self.qb.play(tunes[i]).await?;
+                self.qb.rest(0.3).await?;
             }
             for _ in 0..4 {
                 self.put_pose(x - 13, y, 1);
                 self.put_pose(x + 47, y, 2);
-                self.qb.play("T160O0L32EFGEFDC")?;
-                self.qb.rest(0.1)?;
+                self.qb.play("T160O0L32EFGEFDC").await?;
+                self.qb.rest(0.1).await?;
                 self.put_pose(x - 13, y, 2);
                 self.put_pose(x + 47, y, 1);
-                self.qb.play("T160O0L32EFGEFDC")?;
-                self.qb.rest(0.1)?;
+                self.qb.play("T160O0L32EFGEFDC").await?;
+                self.qb.rest(0.1).await?;
             }
         }
         Ok(())
@@ -116,7 +116,7 @@ impl Game {
     }
 
     /// PlayGame, the main loop.
-    pub fn play_game(&mut self, p1: &str, p2: &str, num_games: i32) -> Result<()> {
+    pub async fn play_game(&mut self, p1: &str, p2: &str, num_games: i32) -> Result<()> {
         let mut total_wins = [0i32, 0];
         // J alternates who throws. The listing starts it at 1 and flips it
         // at the top of the loop, so player 1 throws first.
@@ -144,11 +144,13 @@ impl Game {
                 let tosser = (j + 1) as usize;
 
                 let player_hit;
-                (hit, player_hit) = self.do_shot(
-                    tosser,
-                    self.gorilla_x[tosser - 1],
-                    self.gorilla_y[tosser - 1],
-                )?;
+                (hit, player_hit) = self
+                    .do_shot(
+                        tosser,
+                        self.gorilla_x[tosser - 1],
+                        self.gorilla_y[tosser - 1],
+                    )
+                    .await?;
 
                 if self.sun_hit {
                     self.do_sun(false);
@@ -161,11 +163,11 @@ impl Game {
             }
             // SLEEP 1 in the listing, which a keypress cuts short. Rest does
             // not, which costs the player a second they cannot skip.
-            self.qb.rest(1.0)?;
+            self.qb.rest(1.0).await?;
         }
 
         self.draw_game_over(p1, p2, total_wins);
-        self.sparkle_pause()?;
+        self.sparkle_pause().await?;
         self.qb.color(7, Some(0));
         self.qb.cls();
         Ok(())
@@ -194,11 +196,11 @@ impl Game {
     }
 
     /// The whole program, in the order the module level code runs it.
-    pub fn run(&mut self) -> Result<()> {
-        self.intro()?;
-        let (p1, p2, num_games) = self.get_inputs()?;
-        self.gorilla_intro(&p1, &p2)?;
-        self.play_game(&p1, &p2, num_games)
+    pub async fn run(&mut self) -> Result<()> {
+        self.intro().await?;
+        let (p1, p2, num_games) = self.get_inputs().await?;
+        self.gorilla_intro(&p1, &p2).await?;
+        self.play_game(&p1, &p2, num_games).await
     }
 }
 

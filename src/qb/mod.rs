@@ -104,26 +104,29 @@ impl Qb {
     /// The original busy waited for a period scaled by a startup benchmark
     /// of the machine. Here it is a real wait, scaled by `--speed`, that
     /// pumps while it waits.
-    pub fn rest(&mut self, secs: f64) -> Result<()> {
+    pub async fn rest(&mut self, secs: f64) -> Result<()> {
         let until = timing::deadline_ms(backend::now_ms(), secs / self.speed);
-        self.wait_until(until)
+        self.wait_until(until).await
     }
 
     /// Wait `ms` of real time, pumping as it goes. Not scaled by `--speed`:
     /// this is how long a tune sounds, which the speed never changed.
-    pub fn wait_ms(&mut self, ms: f64) -> Result<()> {
+    pub async fn wait_ms(&mut self, ms: f64) -> Result<()> {
         let until = timing::deadline_ms(backend::now_ms(), ms / 1000.0);
-        self.wait_until(until)
+        self.wait_until(until).await
     }
 
-    fn wait_until(&mut self, until: f64) -> Result<()> {
+    /// Wait until `until` on the backend clock. The `sleep_ms` await is the
+    /// one point where a browser gets control back to paint and deliver
+    /// keys; natively it is an ordinary thread sleep.
+    async fn wait_until(&mut self, until: f64) -> Result<()> {
         loop {
             self.pump()?;
             let now = backend::now_ms();
             if now >= until {
                 return Ok(());
             }
-            backend::sleep_ms((until - now).min(backend::SLICE_MS));
+            backend::sleep_ms((until - now).min(backend::SLICE_MS)).await;
         }
     }
 
@@ -168,22 +171,22 @@ impl Qb {
     }
 
     /// PLAY "..."
-    pub fn play(&mut self, mml: &str) -> Result<()> {
+    pub async fn play(&mut self, mml: &str) -> Result<()> {
         let (notes, foreground) = sound::parse_mml(mml);
         if let Some(ms) = self.audio.play(&notes, foreground) {
-            self.wait_ms(ms)?;
+            self.wait_ms(ms).await?;
         }
         self.pump()
     }
 
     /// BEEP. QBasic's is 800 Hz for a quarter of a second, and it blocks.
-    pub fn beep(&mut self) -> Result<()> {
+    pub async fn beep(&mut self) -> Result<()> {
         let note = sound::Note {
             freq: 800.0,
             ms: 250.0,
         };
         if let Some(ms) = self.audio.play(&[note], true) {
-            self.wait_ms(ms)?;
+            self.wait_ms(ms).await?;
         }
         self.pump()
     }
@@ -259,7 +262,7 @@ mod tests {
         let mut q = Qb::headless(64, 32);
         q.quit = true;
         assert!(q.pump().is_err());
-        assert!(q.rest(0.01).is_err());
+        assert!(pollster::block_on(q.rest(0.01)).is_err());
         assert!(q.inkey().is_err());
     }
 
@@ -268,7 +271,7 @@ mod tests {
         let mut q = Qb::headless(64, 32);
         q.speed = 1000.0;
         let t = std::time::Instant::now();
-        q.rest(1.0).unwrap();
+        pollster::block_on(q.rest(1.0)).unwrap();
         assert!(t.elapsed().as_millis() < 200);
     }
 
@@ -305,7 +308,7 @@ mod tests {
         // every victory dance.
         let mut q = Qb::headless(64, 32);
         let t = std::time::Instant::now();
-        q.play("MFT120L4CCCCCCCC").unwrap();
+        pollster::block_on(q.play("MFT120L4CCCCCCCC")).unwrap();
         assert!(t.elapsed().as_millis() < 100, "waited {:?}", t.elapsed());
     }
 
@@ -313,7 +316,7 @@ mod tests {
     fn rest_really_waits() {
         let mut q = Qb::headless(64, 32);
         let t = std::time::Instant::now();
-        q.rest(0.05).unwrap();
+        pollster::block_on(q.rest(0.05)).unwrap();
         let ms = t.elapsed().as_millis();
         assert!((50..500).contains(&ms), "rest(0.05) took {ms} ms");
     }

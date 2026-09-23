@@ -17,8 +17,9 @@ pub fn now_ms() -> f64 {
     START.get_or_init(Instant::now).elapsed().as_secs_f64() * 1000.0
 }
 
-/// Sleep the thread.
-pub fn sleep_ms(ms: f64) {
+/// Sleep the thread. Async only so it has the same shape as the browser
+/// backend's; the future is complete by the time it is first polled.
+pub async fn sleep_ms(ms: f64) {
     std::thread::sleep(Duration::from_secs_f64(ms.max(0.0) / 1000.0));
 }
 

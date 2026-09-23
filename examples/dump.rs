@@ -68,7 +68,7 @@ fn main() {
             for c in ANSWERS.chars() {
                 g.qb.push_key(c);
             }
-            g.get_inputs().expect("a headless game never quits");
+            pollster::block_on(g.get_inputs()).expect("a headless game never quits");
             if screen == "choice" {
                 g.draw_choice_menu();
             }
@@ -101,7 +101,7 @@ fn main() {
             g.set_screen();
             g.qb.screen.cls(0);
             g.qb.screen.line_fill(260, 180, 420, 340, 5);
-            g.do_explosion(340.0, 260.0).unwrap();
+            pollster::block_on(g.do_explosion(340.0, 260.0)).unwrap();
         }
         "deadgorilla" => {
             g.set_screen();
@@ -130,7 +130,7 @@ fn main() {
             // branch went, the same two explosions would be drawn and the
             // screen would come out identical. With one, a branch that
             // picked the wrong gorilla puts the crater on the other side.
-            g.explode_gorilla(120.0, 200.0).unwrap();
+            pollster::block_on(g.explode_gorilla(120.0, 200.0)).unwrap();
         }
 
         // The moving screens. The skyline comes out of the port's own

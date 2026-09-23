@@ -97,5 +97,5 @@ fn main() {
     }
     let mut game = Game::new(qb, cfg.seed);
     // A closed window unwinds out of the whole game, which is not an error.
-    let _ = game.run();
+    let _ = pollster::block_on(game.run());
 }

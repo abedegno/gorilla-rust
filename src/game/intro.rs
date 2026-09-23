@@ -53,13 +53,13 @@ impl Game {
     }
 
     /// Intro
-    pub fn intro(&mut self) -> Result<()> {
+    pub async fn intro(&mut self) -> Result<()> {
         self.qb.screen_mode(0);
         self.qb.color(15, Some(0));
         self.qb.cls();
         self.draw_intro_text();
-        self.qb.play("MBT160O1L8CDEDCDL4ECC")?;
-        self.sparkle_pause()
+        self.qb.play("MBT160O1L8CDEDCDL4ECC").await?;
+        self.sparkle_pause().await
     }
 
     /// SparklePause, the flashing border on the intro and game over screens.
@@ -70,7 +70,7 @@ impl Game {
     /// keyboard buffer and then blocks until a key arrives, so headless it
     /// never terminates. Keeping the arithmetic in testable functions is
     /// what catches an off-by-one here instead of a passing suite hiding it.
-    pub fn sparkle_pause(&mut self) -> Result<()> {
+    pub async fn sparkle_pause(&mut self) -> Result<()> {
         self.qb.color(4, Some(0));
         self.qb.clear_keys();
         loop {
@@ -79,7 +79,7 @@ impl Game {
                 if self.qb.inkey()?.is_some() {
                     return Ok(());
                 }
-                self.qb.rest(0.05)?;
+                self.qb.rest(0.05).await?;
             }
         }
     }
@@ -109,14 +109,15 @@ impl Game {
     }
 
     /// GetInputs
-    pub fn get_inputs(&mut self) -> Result<(String, String, i32)> {
+    pub async fn get_inputs(&mut self) -> Result<(String, String, i32)> {
         self.qb.color(7, Some(0));
         self.qb.cls();
 
         self.qb.locate(8, 15);
         let mut p1 = self
             .qb
-            .line_input("Name of Player 1 (Default = 'Player 1'): ")?;
+            .line_input("Name of Player 1 (Default = 'Player 1'): ")
+            .await?;
         p1 = if p1.is_empty() {
             "Player 1".to_string()
         } else {
@@ -126,7 +127,8 @@ impl Game {
         self.qb.locate(10, 15);
         let mut p2 = self
             .qb
-            .line_input("Name of Player 2 (Default = 'Player 2'): ")?;
+            .line_input("Name of Player 2 (Default = 'Player 2'): ")
+            .await?;
         p2 = if p2.is_empty() {
             "Player 2".to_string()
         } else {
@@ -141,7 +143,8 @@ impl Game {
             self.qb.locate(12, 13);
             let s = self
                 .qb
-                .line_input("Play to how many total points (Default = 3)? ")?;
+                .line_input("Play to how many total points (Default = 3)? ")
+                .await?;
             if s.is_empty() {
                 break 3;
             }
@@ -158,7 +161,8 @@ impl Game {
             self.qb.locate(14, 17);
             let s = self
                 .qb
-                .line_input("Gravity in Meters/Sec (Earth = 9.8)? ")?;
+                .line_input("Gravity in Meters/Sec (Earth = 9.8)? ")
+                .await?;
             if s.is_empty() {
                 break 9.8;
             }
@@ -223,7 +227,7 @@ mod tests {
     #[test]
     fn empty_names_fall_back_to_the_defaults() {
         let mut g = game_with_keys("\r\r\r\r");
-        let (p1, p2, games) = g.get_inputs().unwrap();
+        let (p1, p2, games) = pollster::block_on(g.get_inputs()).unwrap();
         assert_eq!(p1, "Player 1");
         assert_eq!(p2, "Player 2");
         assert_eq!(games, 3);
@@ -233,7 +237,7 @@ mod tests {
     #[test]
     fn names_are_cut_to_ten_characters() {
         let mut g = game_with_keys("Bartholomew\rArchibald\r\r\r");
-        let (p1, p2, _) = g.get_inputs().unwrap();
+        let (p1, p2, _) = pollster::block_on(g.get_inputs()).unwrap();
         assert_eq!(p1, "Bartholome");
         assert_eq!(p2, "Archibald");
     }
@@ -241,7 +245,7 @@ mod tests {
     #[test]
     fn the_point_total_and_gravity_are_read() {
         let mut g = game_with_keys("A\rB\r5\r15\r");
-        let (_, _, games) = g.get_inputs().unwrap();
+        let (_, _, games) = pollster::block_on(g.get_inputs()).unwrap();
         assert_eq!(games, 5);
         assert!((g.gravity - 15.0).abs() < 1e-9);
     }
@@ -263,7 +267,7 @@ mod tests {
         // takes "5x" as five games rather than asking again. Rust's parse
         // would have rejected the whole string.
         let mut g = game_with_keys("A\rB\r5x\r9.8m\r");
-        let (_, _, games) = g.get_inputs().unwrap();
+        let (_, _, games) = pollster::block_on(g.get_inputs()).unwrap();
         assert_eq!(games, 5);
         assert!((g.gravity - 9.8).abs() < 1e-9, "got {}", g.gravity);
     }
@@ -283,10 +287,10 @@ mod tests {
         // whether or not the clear happens. That is what the first version
         // of this test got wrong.
         let mut rejected = game_with_keys("A\rB\rabcdefghij\r2\r\r");
-        assert_eq!(rejected.get_inputs().unwrap().2, 2);
+        assert_eq!(pollster::block_on(rejected.get_inputs()).unwrap().2, 2);
 
         let mut clean = game_with_keys("A\rB\r2\r\r");
-        assert_eq!(clean.get_inputs().unwrap().2, 2);
+        assert_eq!(pollster::block_on(clean.get_inputs()).unwrap().2, 2);
 
         assert_eq!(
             row_pixels(&rejected, 12),
@@ -300,11 +304,11 @@ mod tests {
         // The same, for the SPACE$(28) at row 14. A non positive gravity is
         // rejected, so 0 sends it round again.
         let mut rejected = game_with_keys("A\rB\r\rabcdefghij\r12\r");
-        rejected.get_inputs().unwrap();
+        pollster::block_on(rejected.get_inputs()).unwrap();
         assert!((rejected.gravity - 12.0).abs() < 1e-9);
 
         let mut clean = game_with_keys("A\rB\r\r12\r");
-        clean.get_inputs().unwrap();
+        pollster::block_on(clean.get_inputs()).unwrap();
         assert!((clean.gravity - 12.0).abs() < 1e-9);
 
         assert_eq!(row_pixels(&rejected, 14), row_pixels(&clean, 14));
