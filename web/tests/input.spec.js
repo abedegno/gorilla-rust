@@ -50,17 +50,17 @@ test('clicking the mute button does not take the keyboard away', async ({ page }
 });
 
 test('the mute choice is remembered', async ({ page }) => {
-  await page.goto('/index.html?seed=1');
+  await page.goto('index.html?seed=1');
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'false');
   await page.click('#mute');
-  await page.goto('/index.html?seed=1');
+  await page.goto('index.html?seed=1');
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('Backspace and Space stay in the game', async ({ page }) => {
   // A short viewport, so the page could scroll if Space were let through.
   await page.setViewportSize({ width: 800, height: 300 });
-  await page.goto('/index.html?seed=1&mute');
+  await page.goto('index.html?seed=1&mute');
   await expect(page.locator('#start')).toBeEnabled();
   const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight);
   expect(pageHeight, 'the page is taller than the window, so it could scroll').toBeGreaterThan(300);
@@ -81,7 +81,7 @@ test('Backspace and Space stay in the game', async ({ page }) => {
 });
 
 test('starting twice runs one game, not two', async ({ page }) => {
-  await page.goto('/index.html?seed=1&mute');
+  await page.goto('index.html?seed=1&mute');
   await page.dblclick('#start');
   await waitForIntro(page);
   // The Rust side refuses a second start even if the page tried one.

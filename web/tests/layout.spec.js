@@ -18,7 +18,7 @@ async function expectInView(page, selector) {
 }
 
 test('the screen is drawn with square pixels', async ({ page }) => {
-  await page.goto('/index.html?seed=1&mute');
+  await page.goto('index.html?seed=1&mute');
   const rendering = await page.evaluate(
     () => getComputedStyle(document.getElementById('screen')).imageRendering,
   );

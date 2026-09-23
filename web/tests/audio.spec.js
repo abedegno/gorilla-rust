@@ -43,7 +43,9 @@ test('?mute plays no notes at all', async ({ page }) => {
 });
 
 test('the mute button silences a tune that is already sounding', async ({ page }) => {
-  await spyOnAudio(page);
+  // The clock stops at the intro tune's first note, so the tune is still to
+  // come when Mute is clicked however slow the machine is.
+  await spyOnAudio(page, { freezeOnFirstNote: true });
   await startGame(page, '?seed=1');
   await expect.poll(() => oscillators(page)).toBeGreaterThan(0);
 
@@ -64,6 +66,30 @@ test('the mute button silences a tune that is already sounding', async ({ page }
   await page.click('#mute');
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'false');
   expect(await gainsToSpeakers(page)).toEqual([1]);
+});
+
+test('a context that never starts gets only the first tune', async ({ page }) => {
+  // Some browsers have not started a new context's clock by the time the
+  // intro tune arrives, so that one tune is scheduled anyway and plays when
+  // the clock starts. If the clock never does, nothing after it may pile up
+  // behind it.
+  await spyOnAudio(page, { neverStarts: true });
+  await startGame(page, '?seed=1');
+  await waitForIntro(page);
+  // The intro tune: C D E D C D E C C.
+  await expect.poll(() => oscillators(page)).toBe(9);
+
+  await page.keyboard.press('x');
+  await typeTheCapturedAnswers(page);
+  await expect.poll(() => canvasDiff(page, CHOICE)).toEqual({ diff: 0 });
+  // View Intro: the gorillas dance to four more tunes.
+  await page.keyboard.press('v');
+  await expect.poll(() => page.evaluate(() => document.getElementById('screen').height)).toBe(350);
+  await page.waitForTimeout(2500);
+
+  expect(await oscillators(page)).toBe(9);
+  // Each of those tunes asked the context to resume instead.
+  expect(await page.evaluate(() => window.__audio.resumes)).toBeGreaterThan(1);
 });
 
 test('a key or a tap resumes sound the browser suspended', async ({ page }) => {

@@ -121,6 +121,14 @@ npx playwright test
 Serve it with `python3 -m http.server` from `web/`. The Playwright tests
 compare the canvas against the same fixtures the native tests use.
 
+The same tests run against a deployed copy when `BASE_URL` is set, with
+the trailing slash, which is what the Pages workflow does after every
+deploy:
+
+```sh
+BASE_URL=https://abedegno.github.io/gorilla-rust/ npx playwright test
+```
+
 Anything in `src/qb` or `src/game` that waits must go through `Qb::rest`
 or `Qb::wait_ms`, which are the only places a browser gets control back.
 A loop that spins without awaiting one of them freezes the page.

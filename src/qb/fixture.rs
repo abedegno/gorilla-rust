@@ -81,3 +81,43 @@ fn art(screen: &Screen, want: &[u8], w: i32, h: i32, cx: i32, cy: i32) -> String
     }
     s
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Every conformance test ends in `assert_matches`, so these pin the
+    // comparison itself: were it ever to stop failing, all of those tests
+    // would pass whatever the code drew. Mutation testing showed that
+    // replacing it with an empty body failed nothing.
+
+    #[test]
+    #[should_panic(expected = "pixels differ")]
+    fn a_blank_screen_does_not_match_a_capture() {
+        assert_matches(&Screen::new(640, 350), "sun");
+    }
+
+    #[test]
+    #[should_panic(expected = "pixels differ")]
+    fn one_wrong_pixel_is_enough_to_fail() {
+        let (w, h, pixels) = load("sun");
+        let mut s = Screen::new(w, h);
+        s.pixels = pixels;
+        s.pixels[0] ^= 1;
+        assert_matches(&s, "sun");
+    }
+
+    #[test]
+    #[should_panic(expected = "size differs")]
+    fn a_screen_of_the_wrong_size_does_not_match() {
+        assert_matches(&Screen::new(640, 400), "sun");
+    }
+
+    #[test]
+    fn the_capture_itself_matches() {
+        let (w, h, pixels) = load("sun");
+        let mut s = Screen::new(w, h);
+        s.pixels = pixels;
+        assert_matches(&s, "sun");
+    }
+}
