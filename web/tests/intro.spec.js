@@ -22,15 +22,15 @@ test('the keypad is hidden on a desktop', async ({ page }) => {
 });
 
 test('?mute starts muted', async ({ page }) => {
-  await page.goto('/index.html?seed=1&mute');
+  await page.goto('index.html?seed=1&mute');
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('?mute is remembered, as the mute button is', async ({ page }) => {
   // A keyboard player cannot reach the button, so ?mute is their way to it.
-  await page.goto('/index.html?seed=1&mute');
+  await page.goto('index.html?seed=1&mute');
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
-  await page.goto('/index.html?seed=1');
+  await page.goto('index.html?seed=1');
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
 });
 
@@ -44,7 +44,7 @@ test('the start button waits until the game has loaded', async ({ page }) => {
     await held;
     await route.continue();
   });
-  await page.goto('/index.html?seed=1&mute');
+  await page.goto('index.html?seed=1&mute');
   const overlay = page.locator('#start');
   await expect(overlay).toBeDisabled();
   await expect(overlay).toHaveText('Loading…');
@@ -58,7 +58,7 @@ test('the start button waits until the game has loaded', async ({ page }) => {
 
 test('a game that cannot load says so', async ({ page }) => {
   await page.route('**/pkg/gorillas.js', (route) => route.fulfill({ status: 404 }));
-  await page.goto('/index.html?seed=1&mute');
+  await page.goto('index.html?seed=1&mute');
   await expect(page.locator('#error')).toBeVisible();
   await expect(page.locator('#error')).toContainText('could not load the game');
   await expect(page.locator('#start')).toBeDisabled();

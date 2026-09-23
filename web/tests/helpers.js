@@ -22,7 +22,7 @@ export const BORDER = { excludeRows: [1, 22], excludeCols: [1, 80] };
 
 /** Load the page and dismiss the start overlay. Muted and seeded by default. */
 export async function startGame(page, query = '?seed=1&mute') {
-  await page.goto('/index.html' + query);
+  await page.goto('index.html' + query);
   await page.click('#start');
 }
 

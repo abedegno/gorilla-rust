@@ -25,6 +25,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      wasm_sha: ${{ steps.fingerprint.outputs.wasm_sha }}
     steps:
       - uses: actions/checkout@v7
 
@@ -47,6 +49,12 @@ jobs:
 
       - name: Build
         run: web/build.sh
+
+      # The post-deploy check waits for the live site to serve exactly this
+      # file, so it tests the new build rather than a cached old one.
+      - name: Fingerprint the build
+        id: fingerprint
+        run: echo "wasm_sha=$(sha256sum web/pkg/gorillas_bg.wasm | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v4
         with:
@@ -88,6 +96,57 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # The build job tests the page before it is deployed. This tests what
+  # actually went live: the same suite, pointed at the public URL.
+  verify:
+    name: Check the live site
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Wait for the new build to be served
+        env:
+          SITE: ${{ needs.deploy.outputs.page_url }}
+          WANT: ${{ needs.build.outputs.wasm_sha }}
+        run: |
+          for attempt in $(seq 1 30); do
+            have="$(curl -fsSL "${SITE}pkg/gorillas_bg.wasm" | sha256sum | cut -d' ' -f1)"
+            if [ "$have" = "$WANT" ]; then
+              echo "The site is serving this build."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::The site was still not serving this build after five minutes."
+          exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install the test browsers
+        working-directory: web
+        run: |
+          npm ci
+          npx playwright install --with-deps
+
+      - name: Browser tests against the live site
+        working-directory: web
+        env:
+          BASE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: live-site-results
+          path: web/test-results
