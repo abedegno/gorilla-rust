@@ -18,6 +18,23 @@ async function typeTheCapturedAnswers(page) {
   await page.keyboard.press('Enter'); // the default gravity
 }
 
+/** RGB of the canvas pixels across row `y`, from column `from` to `to` inclusive. */
+async function rowPixels(page, y, from, to) {
+  return page.evaluate(
+    ({ y, from, to }) => {
+      const canvas = document.getElementById('screen');
+      const data = canvas.getContext('2d').getImageData(0, y, canvas.width, 1).data;
+      const pixels = [];
+      for (let x = from; x <= to; x++) {
+        const o = x * 4;
+        pixels.push([data[o], data[o + 1], data[o + 2]]);
+      }
+      return pixels;
+    },
+    { y, from, to },
+  );
+}
+
 test('typing the answers reaches the menu exactly as the original drew it', async ({ page }) => {
   await startGame(page);
   await waitForIntro(page);
@@ -93,6 +110,15 @@ test('the screen keeps its size when the game switches to graphics', async ({ pa
   await expect.poll(() => page.evaluate(() => document.getElementById('screen').height)).toBe(350);
   const graphics = await page.locator('#screen').boundingBox();
   expect(graphics).toEqual(text);
+
+  // Row 2, columns 150-250 is clear of the names (top corners), the sun
+  // (about x 290-350) and any building (the tallest building's roof is
+  // below y 30): plain sky. That is EGA blue, palette index 0 which is
+  // register 1, RGB (0, 0, 170). The fixtures every other test compares
+  // against are all grey, so only a check like this one would notice a
+  // red/blue channel swap.
+  const sky = Array.from({ length: 101 }, () => [0, 0, 170]);
+  await expect.poll(() => rowPixels(page, 2, 150, 250)).toEqual(sky);
 });
 
 test.describe('on a touch screen', () => {
