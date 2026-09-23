@@ -337,9 +337,13 @@ dependencies = [
 name = "gorilla-rust"
 version = "1.1.0"
 dependencies = [
+ "js-sys",
  "minifb",
  "pollster",
  "rodio",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
  "windows-sys 0.61.2",
 ]
 
