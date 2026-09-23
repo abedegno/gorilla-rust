@@ -45,9 +45,16 @@ export async function typeTheCapturedAnswers(page) {
  * connected straight to a destination, and counts calls to resume. Setting
  * `window.__audio.blockResume` makes resume do nothing, as a browser that
  * refuses it outside a gesture would.
+ *
+ * Options, for tests that must not depend on how fast the machine is:
+ * `freezeOnFirstNote` suspends the context the moment the first note is
+ * made, so the tune it belongs to is certain to be still to come;
+ * `neverStarts` makes the context report itself suspended with its clock
+ * at zero, and ignore resume, as a context the browser never starts would,
+ * while notes are still really scheduled on it.
  */
-export async function spyOnAudio(page) {
-  await page.addInitScript(() => {
+export async function spyOnAudio(page, { freezeOnFirstNote = false, neverStarts = false } = {}) {
+  await page.addInitScript(({ freezeOnFirstNote, neverStarts }) => {
     const spy = {
       oscillators: 0,
       contexts: [],
@@ -62,6 +69,7 @@ export async function spyOnAudio(page) {
     const createOscillator = BaseAudioContext.prototype.createOscillator;
     BaseAudioContext.prototype.createOscillator = function () {
       spy.oscillators++;
+      if (freezeOnFirstNote && spy.oscillators === 1) this.suspend();
       return createOscillator.call(this);
     };
     const stop = AudioScheduledSourceNode.prototype.stop;
@@ -83,9 +91,17 @@ export async function spyOnAudio(page) {
       constructor(...args) {
         super(...args);
         spy.contexts.push(this);
+        if (neverStarts) {
+          Object.defineProperty(this, 'state', { get: () => 'suspended' });
+          Object.defineProperty(this, 'currentTime', { get: () => 0 });
+          this.resume = () => {
+            spy.resumes++;
+            return Promise.resolve();
+          };
+        }
       }
     };
-  });
+  }, { freezeOnFirstNote, neverStarts });
 }
 
 /**
