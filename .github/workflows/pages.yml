@@ -1,7 +1,10 @@
 name: Pages
 
 # A release tag deploys the browser version, so the page always matches
-# the latest downloads. Running it by hand deploys the chosen branch.
+# the latest downloads. The github-pages environment must allow v* tags
+# for that (see CONTRIBUTING.md). It can also be run by hand, but the
+# environment only accepts a run from the default branch, so that is the
+# one to choose.
 on:
   push:
     tags: ["v*"]

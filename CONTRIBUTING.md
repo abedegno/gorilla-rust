@@ -143,7 +143,11 @@ For the maintainer.
    The Release workflow builds every platform and publishes the GitHub
    release, with that version's changelog section as the notes. A tag
    whose version has no changelog section fails before anything is
-   published.
+   published. The same tag runs the Pages workflow, which tests the
+   browser build and deploys it to GitHub Pages. The `github-pages`
+   environment only allows the default branch until told otherwise, so
+   its deployment rules (Settings, Environments) must also allow tags
+   matching `v*`, or the deploy is refused.
 3. Publish the crate: `cargo publish`. It cannot be undone, only yanked.
 
 After `cargo publish` (or `cargo publish --dry-run`), run `cargo clean -p
