@@ -232,6 +232,34 @@ fn paint_terminates_when_the_fill_differs_from_the_border() {
 }
 
 #[test]
+fn a_fill_through_many_narrow_gaps_still_finishes() {
+    // One pixel wide columns across the whole screen, joined along the
+    // top: a single region that makes the fill examine each of its
+    // hundred thousand runs. The loop's safety cap must sit well above
+    // what a legitimate fill like this needs.
+    let mut s = Screen::new(640, 350);
+    for x in (0..640).step_by(2) {
+        s.line(x, 10, x, 349, 5);
+    }
+    s.paint(1, 5, 7, 5);
+    assert_eq!(s.point(1, 349), 7);
+    assert_eq!(s.point(639, 349), 7);
+    assert_eq!(s.point(0, 349), 5);
+}
+
+#[test]
+fn a_box_filled_past_the_edges_stops_at_them() {
+    let mut s = Screen::new(640, 350);
+    s.line_fill(600, 300, 700, 400, 4);
+    s.line_fill(-50, -50, 10, 10, 2);
+    assert_eq!(s.point(639, 349), 4);
+    assert_eq!(s.point(599, 349), 0);
+    assert_eq!(s.point(0, 0), 2);
+    assert_eq!(s.point(10, 10), 2);
+    assert_eq!(s.point(11, 11), 0);
+}
+
+#[test]
 fn paint_on_a_pixel_already_the_border_colour_does_nothing() {
     let mut s = Screen::new(32, 32);
     s.cls(0);

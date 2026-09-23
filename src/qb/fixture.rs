@@ -98,12 +98,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "pixels differ")]
+    #[should_panic(expected = "sun: 1 of 224000 pixels differ")]
     fn one_wrong_pixel_is_enough_to_fail() {
         let (w, h, pixels) = load("sun");
         let mut s = Screen::new(w, h);
         s.pixels = pixels;
-        s.pixels[0] ^= 1;
+        // Not on row 0, so a report that got the row arithmetic wrong
+        // would count a different number of differences.
+        s.pixels[(3 * w + 5) as usize] ^= 1;
         assert_matches(&s, "sun");
     }
 
