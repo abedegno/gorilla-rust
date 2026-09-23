@@ -1,5 +1,3 @@
-import init, { start, push_key, set_muted } from './pkg/gorillas.js';
-
 const MUTE_KEY = 'gorillas-muted';
 
 /** The character the game should see for a key name, or null to ignore it. */
@@ -52,13 +50,24 @@ async function main() {
   };
   showMute();
 
+  // Imported here rather than at the top of the file, so that a missing or
+  // broken module still reaches the error message instead of stopping this
+  // script before it runs.
+  let wasm;
   try {
-    await init();
+    wasm = await import('./pkg/gorillas.js');
+    await wasm.default();
   } catch (e) {
-    overlay.disabled = true;
+    overlay.textContent = 'The game could not load';
     showError(`This browser could not load the game: ${e}`);
     return;
   }
+  const { start, push_key, set_muted } = wasm;
+
+  // The overlay stays disabled, reading "Loading…", until now, so a tap
+  // made before the game could start is not silently lost.
+  overlay.textContent = 'Click or tap to start';
+  overlay.disabled = false;
 
   let started = false;
   // Click, not pointerdown: some browsers only let sound start on a click.

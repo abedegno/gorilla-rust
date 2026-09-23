@@ -63,6 +63,8 @@ main {
   cursor: pointer;
 }
 
+.overlay:disabled { cursor: progress; }
+
 .controls button,
 #keypad button {
   border: 1px solid #555;

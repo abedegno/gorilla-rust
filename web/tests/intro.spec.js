@@ -26,6 +26,36 @@ test('?mute starts muted', async ({ page }) => {
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('the start button waits until the game has loaded', async ({ page }) => {
+  // Hold the game's code back, so the page can be seen before it arrives.
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/pkg/gorillas_bg.wasm', async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.goto('/index.html?seed=1&mute');
+  const overlay = page.locator('#start');
+  await expect(overlay).toBeDisabled();
+  await expect(overlay).toHaveText('Loading…');
+
+  release();
+  await expect(overlay).toBeEnabled();
+  await expect(overlay).toHaveText('Click or tap to start');
+  await overlay.click();
+  await expect.poll(() => canvasDiff(page, INTRO, BORDER)).toEqual({ diff: 0 });
+});
+
+test('a game that cannot load says so', async ({ page }) => {
+  await page.route('**/pkg/gorillas.js', (route) => route.fulfill({ status: 404 }));
+  await page.goto('/index.html?seed=1&mute');
+  await expect(page.locator('#error')).toBeVisible();
+  await expect(page.locator('#error')).toContainText('could not load the game');
+  await expect(page.locator('#start')).toBeDisabled();
+});
+
 test('page buttons are pointer-only: Tab and Space cannot reach or press mute', async ({
   page,
 }) => {
