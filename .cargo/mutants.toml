@@ -25,6 +25,14 @@ exclude_globs = [
 # the file, the position, and the function with its impl type, but no
 # module path.
 exclude_re = [
+    # Opening the window and reading its keyboard need a display.
+    "Qb::windowed",
+    "key_to_char",
+    "shift_char",
+    # Sound needs an audio device, and CI runners have none.
+    "Audio::new",
+    "Audio::play",
+    "SquareWave",
     # Opening the window needs a display. cargo-mutants 27 does not apply
     # these patterns to struct field deletions, so the three it makes from
     # Display::open's WindowOptions still show up as missed. They are
@@ -35,16 +43,17 @@ exclude_re = [
     "fixture\\.rs:.* in art$",
     "replace art -> String",
     # Equivalent mutants: no input can tell them apart from the original.
+    # Only ones that can be named without a line number are listed here;
+    # the rest are in reference/NOTES.md, "Mutants that survive on purpose".
     # ega_rgb ORs together channels whose bits never overlap, so | and ^
     # agree.
     "screen\\.rs:.*replace \\| with \\^ in ega_rgb",
+    # The clip's outcodes are the same: one bit per edge. The last of the
+    # four only lets through lines lying wholly off one edge, which then
+    # draw nothing, because every pixel is clipped as it is set.
+    "screen\\.rs:.*replace \\| with \\^ in Screen::clip",
     # to_rgba's reserve only sizes the allocation.
     "screen\\.rs:.*replace \\* with [+/] in Screen::to_rgba",
-    # cls_view's right edge: line_fill clamps to the screen anyway.
-    "text\\.rs:59:56:",
-    # The trajectory's y is scaled by ScrHeight / 350, which in mode 9 is
-    # exactly 1, so multiplying and dividing by it agree.
-    "shot\\.rs:88:71: replace \\* with / in Trajectory::at",
     # Zero wind returns before the arrow's direction is chosen.
     "replace > with >= in Game::draw_wind_arrow",
     # Without the sleep, wait_ms spins on the clock to the same deadline.

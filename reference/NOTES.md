@@ -698,3 +698,54 @@ Everything here is deliberate.
 5. The listing `BEEP`s on an unrecognised key in `GetNum#`; the port plays
    800 Hz for a quarter second, which is what QBasic's BEEP is, but the
    duration was not measured.
+
+## Mutants that survive on purpose
+
+The weekly Mutation testing run changes the code one small way at a time
+and lists each change no test noticed. `.cargo/mutants.toml` leaves out
+what needs a window or a sound card, and the equivalent mutants it can
+name without a line number. The rest are here, so a run can be read
+against this list: anything missing from it is a real gap.
+
+They are named by function and change, not by line, because the lines
+move.
+
+**Equivalent: no input can tell them from the original.**
+
+| where | change | why it cannot show |
+|---|---|---|
+| `bresenham_circle` | `d < 0` to `<=` | `d` starts odd and only ever moves by even steps, so it is never 0 |
+| `Screen::line` | the swap's `x1 > x2` to `>=` | only swaps the ends of a vertical line, which covers the same pixels |
+| `Screen::line`'s `sign` | `>` to `>=`, `<` to `<=` | a sign of 0 only ever multiplies a zero span |
+| `Screen::circle` | `a > 1.0` to `>=`, both places | at an aspect of exactly 1 both branches scale by 1 |
+| `Screen::paint` | the bounds tests, the push test, the step counter | each popped point's bounds are checked again before it is filled, so these change the work done, not the pixels |
+| `Screen::paint` | the cap's `8 * w * h` to `8 + w * h` | a real fill stays under both; only the margin shrinks |
+| `Qb::cls_view` | the right edge's `width - 1` | `line_fill` clamps it to the screen anyway |
+| `Qb::wait_until` | `until - now` | only changes how finely the wait is sliced; the loop checks the clock again |
+| `Qb::present`, `Qb::play`, `Qb::beep` | whole body to `Ok(())` | headless has no display and muted sound, so they have nothing to do |
+| `Trajectory::at` | `* (ScrHeight / 350)` to `/` | the factor is exactly 1 in mode 9 |
+| `make_city_scape` | the flattening test and its body | unreachable: the tallest building the generator can make is 295, and flattening needs over 310 |
+| `make_city_scape` | `b_height < HT_INC` to `<=` | at exactly 10 it sets 10 |
+| `draw_gorilla` | `fi - 0.1` to `+`, both places | `Scl` rounds both to `fi` |
+| `draw_gorilla` | the legs' `9 * PI / 8` to `%` | the extra arc falls inside the gorilla; the `gorilla` capture is unchanged |
+| `explode_ball` | the erase circles' limit | the ball covers everything they would erase |
+
+**Visible only while something moves.** Every capture is of a screen at
+rest, and these only change a frame that is drawn over a moment later.
+
+| where | change | what covers it |
+|---|---|---|
+| `do_explosion` | the first loop's `<=` | the second loop erases the whole crater to the background |
+| `gorilla_intro` | the earlier frames' `x + 47` to `x * 47` | that is off the right edge, and the last frame is drawn in the right place |
+| `plot_shot` | the throwing pose's `player == 1` | the arms down pose replaces it 0.1 seconds later |
+| `plot_shot` | `!shot_in_sun && !impact` to `\|\|` | a banana drawn in the sun is XORed off again on the next step |
+| `plot_shot` | `!self.sun_hit` deleted | the shocked face is drawn from the second sample in the sun instead of the first |
+| `plot_shot` | `y > 0.0` to `>=` | only differs when the banana is at exactly y = 0 |
+
+**Not measured.** `Screen::circle`'s `a < 0.0` to `<=`, in both places,
+differs only at an aspect of exactly 0. What QBasic does there has not
+been captured, and the game never asks for it.
+
+**Device.** cargo-mutants 27 does not apply `exclude_re` to struct field
+deletions, so the three from `Display::open`'s `WindowOptions` are listed
+although the window is excluded.
