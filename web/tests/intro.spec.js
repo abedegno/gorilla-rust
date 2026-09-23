@@ -26,6 +26,14 @@ test('?mute starts muted', async ({ page }) => {
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('?mute is remembered, as the mute button is', async ({ page }) => {
+  // A keyboard player cannot reach the button, so ?mute is their way to it.
+  await page.goto('/index.html?seed=1&mute');
+  await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
+  await page.goto('/index.html?seed=1');
+  await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('the start button waits until the game has loaded', async ({ page }) => {
   // Hold the game's code back, so the page can be seen before it arrives.
   let release;

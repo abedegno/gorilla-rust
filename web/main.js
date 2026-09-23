@@ -34,7 +34,10 @@ function seedFromUrl(params) {
 async function main() {
   const params = new URLSearchParams(location.search);
   const seed = seedFromUrl(params);
+  // ?mute is remembered like the button, so a keyboard player, who cannot
+  // reach the button, only has to use it once.
   let muted = params.has('mute') || readStoredMute();
+  if (params.has('mute')) storeMute(true);
 
   const overlay = document.getElementById('start');
   const muteButton = document.getElementById('mute');
