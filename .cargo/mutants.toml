@@ -21,6 +21,9 @@ exclude_re = [
     "Display::",
     "key_to_char",
     "shift_char",
+    # The picture of the first difference that a failing fixture test
+    # prints. Only a failing test ever shows it.
+    "fixture::art",
     # Sound needs an audio device, and CI runners have none.
     "Audio::new",
     "Audio::play",
