@@ -35,6 +35,8 @@ pub struct Qb {
     pub audio: backend::Audio,
     display: Option<backend::Display>,
     keys: VecDeque<char>,
+    answers: VecDeque<char>,
+    answering: bool,
 }
 
 impl Qb {
@@ -52,6 +54,8 @@ impl Qb {
             audio,
             display,
             keys: VecDeque::new(),
+            answers: VecDeque::new(),
+            answering: false,
         }
     }
 
@@ -76,6 +80,19 @@ impl Qb {
 
     pub fn push_key(&mut self, c: char) {
         self.keys.push_back(c);
+    }
+
+    /// Keys a test types one at a time, each only when the game reads the
+    /// keyboard and finds nothing waiting, the way a player answers a
+    /// prompt. Unlike `push_key`, these survive `clear_keys`, so they can
+    /// drive the prompts that flush the buffer first, as GetNum does.
+    ///
+    /// Once a test has typed answers, reading the keyboard after the last
+    /// one is used panics. Headless, nothing else could ever press a key,
+    /// so the alternative is a test that hangs instead of failing.
+    pub fn type_answers(&mut self, s: &str) {
+        self.answers.extend(s.chars());
+        self.answering = true;
     }
 
     /// Show the framebuffer and collect keyboard input. Every waiting call
@@ -132,7 +149,12 @@ impl Qb {
 
     pub fn inkey(&mut self) -> Result<Option<char>> {
         self.pump()?;
-        Ok(self.keys.pop_front())
+        let key = self.keys.pop_front().or_else(|| self.answers.pop_front());
+        assert!(
+            key.is_some() || !self.answering,
+            "the game read the keyboard after the typed answers ran out"
+        );
+        Ok(key)
     }
 
     /// Discards whatever is in the keyboard buffer, e.g. before a fresh
@@ -245,6 +267,27 @@ mod tests {
         let mut q = Qb::headless(640, 350);
         assert!(q.pump().is_ok());
         assert!(q.present().is_ok());
+    }
+
+    #[test]
+    fn typed_answers_survive_a_flush_and_come_after_waiting_keys() {
+        let mut q = Qb::headless(64, 32);
+        q.type_answers("xy");
+        q.push_key('a');
+        assert_eq!(q.inkey().unwrap(), Some('a'));
+        q.push_key('b');
+        q.clear_keys();
+        assert_eq!(q.inkey().unwrap(), Some('x'));
+        assert_eq!(q.inkey().unwrap(), Some('y'));
+    }
+
+    #[test]
+    #[should_panic(expected = "typed answers ran out")]
+    fn reading_past_the_typed_answers_fails_rather_than_hangs() {
+        let mut q = Qb::headless(64, 32);
+        q.type_answers("x");
+        q.inkey().unwrap();
+        q.inkey().unwrap();
     }
 
     #[test]

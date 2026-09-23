@@ -115,8 +115,9 @@ impl Game {
         self.qb.screen.put(x, y, &sprite, PutMode::Pset);
     }
 
-    /// PlayGame, the main loop.
-    pub async fn play_game(&mut self, p1: &str, p2: &str, num_games: i32) -> Result<()> {
+    /// PlayGame, the main loop. Returns the final scores, which the listing
+    /// only shows on the game over screen.
+    pub async fn play_game(&mut self, p1: &str, p2: &str, num_games: i32) -> Result<[i32; 2]> {
         let mut total_wins = [0i32, 0];
         // J alternates who throws. The listing starts it at 1 and flips it
         // at the top of the loop, so player 1 throws first.
@@ -170,7 +171,7 @@ impl Game {
         self.sparkle_pause().await?;
         self.qb.color(7, Some(0));
         self.qb.cls();
-        Ok(())
+        Ok(total_wins)
     }
 
     /// The final screen, drawn up to the point where the listing hands over
@@ -200,14 +201,15 @@ impl Game {
         self.intro().await?;
         let (p1, p2, num_games) = self.get_inputs().await?;
         self.gorilla_intro(&p1, &p2).await?;
-        self.play_game(&p1, &p2, num_games).await
+        self.play_game(&p1, &p2, num_games).await?;
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::DANCE_POSES;
-    use crate::game::Game;
+    use crate::game::{Game, ARMSDOWN, LEFTUP, RIGHTUP};
 
     #[test]
     fn the_dance_never_shows_both_arms_down_and_always_alternates() {
@@ -237,5 +239,57 @@ mod tests {
         assert_eq!(scores, [0, 1]);
         Game::update_scores(&mut scores, 2, true);
         assert_eq!(scores, [1, 1]);
+    }
+
+    #[test]
+    fn the_dance_ends_facing_each_other_and_leaves_nothing_else_behind() {
+        let mut q = crate::qb::Qb::headless(640, 350);
+        q.speed = 100_000.0;
+        let mut g = Game::new(q, 1);
+        g.qb.push_key('v');
+        pollster::block_on(g.gorilla_intro("A", "B")).unwrap();
+        // The last frame is the left gorilla with its right arm up and the
+        // right one with its left arm up, at x - 13 and x + 47 of 278.
+        assert_eq!(g.qb.screen.get(265, 175, 294, 204), g.gor_r, "left gorilla");
+        assert_eq!(
+            g.qb.screen.get(325, 175, 354, 204),
+            g.gor_l,
+            "right gorilla"
+        );
+        // Every frame is drawn in the same two places, so nothing else in
+        // the band the gorillas stand in is lit.
+        for y in 150..230 {
+            for x in 0..640 {
+                let in_a_box = (265..295).contains(&x) || (325..355).contains(&x);
+                if !(in_a_box && (175..205).contains(&y)) {
+                    assert_eq!(g.qb.screen.pixel_at(x, y), 0, "stray pixel at ({x},{y})");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn throwers_alternate_across_games_and_a_self_hit_scores_for_the_other() {
+        // Every shot is 45 degrees at velocity 0. With seed 1 that hits
+        // player 1, who stands where the first probe looks, but player 2's
+        // banana drops past them onto their building, as it would in the
+        // listing. So player 1 throws first and scores for player 2; each
+        // later game opens with player 2 missing and player 1 hitting
+        // themselves again.
+        for (games, want) in [(1, [0, 1]), (3, [0, 3])] {
+            let mut q = crate::qb::Qb::headless(640, 350);
+            q.speed = 100_000.0;
+            let mut g = Game::new(q, 1);
+            g.set_screen();
+            // The gorillas are drawn from the sprites the intro captures.
+            for arms in [ARMSDOWN, LEFTUP, RIGHTUP] {
+                g.draw_gorilla(278, 175, arms);
+            }
+            // More answers than the shots need. What is left over
+            // dismisses the game over screen.
+            g.qb.type_answers(&"45\r0\r".repeat(8));
+            let scores = pollster::block_on(g.play_game("A", "B", games)).unwrap();
+            assert_eq!(scores, want, "after {games} games");
+        }
     }
 }

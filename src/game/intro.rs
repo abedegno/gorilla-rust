@@ -65,11 +65,10 @@ impl Game {
     /// SparklePause, the flashing border on the intro and game over screens.
     ///
     /// The phase arithmetic for the border lives in the free functions
-    /// `sparkle_rows` and `sparkle_lit` rather than inline here, because
-    /// `sparkle_pause` itself cannot be exercised by a test: it clears the
-    /// keyboard buffer and then blocks until a key arrives, so headless it
-    /// never terminates. Keeping the arithmetic in testable functions is
-    /// what catches an off-by-one here instead of a passing suite hiding it.
+    /// `sparkle_rows` and `sparkle_lit` rather than inline here. This loop
+    /// clears the keyboard buffer and then waits for a key, so a test can
+    /// only end it with `Qb::type_answers`, and cannot see the frames in
+    /// between. The free functions are where an off-by-one gets caught.
     pub async fn sparkle_pause(&mut self) -> Result<()> {
         self.qb.color(4, Some(0));
         self.qb.clear_keys();
@@ -87,10 +86,9 @@ impl Game {
     /// One frame of the sparkling border, at phase 0 to 4, which is `A - 1`
     /// in the listing.
     ///
-    /// Split out of `sparkle_pause` for the same reason `get_num_key` is
-    /// split out of `get_num`: the loop above clears the keyboard buffer and
-    /// then waits, so headless it never terminates and the screen it
-    /// composes could not otherwise be captured. It does not set the colour,
+    /// Split out of `sparkle_pause` so a test can compose one frame and
+    /// compare it: the loop above only stops for a key, and by then it has
+    /// drawn over whatever frame it was on. It does not set the colour,
     /// because the listing sets it once outside the loop.
     pub fn sparkle_frame(&mut self, phase: usize) {
         let pattern: Vec<char> = "*    ".repeat(18).chars().collect();
@@ -196,9 +194,8 @@ mod tests {
         // Derived by hand from SparklePause in gorilla.bas, where A$ is
         // "*    " repeated and A runs 1 to 5.
         //
-        // This exists because `sparkle_pause` itself cannot be tested: it
-        // clears the keyboard buffer and then waits for a key, so headless it
-        // never terminates. Two off-by-one errors lived in this arithmetic
+        // This exists because a test cannot see `sparkle_pause`'s frames,
+        // only end the loop. Two off-by-one errors lived in this arithmetic
         // and the whole suite passed anyway.
         let pattern: Vec<char> = "*    ".repeat(18).chars().collect();
 

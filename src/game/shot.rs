@@ -235,10 +235,10 @@ impl Game {
     /// an underscore cursor, and rejects anything over 360 on Enter.
     ///
     /// It clears the keyboard buffer first, matching the listing's
-    /// `WHILE INKEY$ <> "": WEND`, which means headless it never terminates
-    /// and cannot be driven from a test. The per key logic therefore lives in
-    /// `get_num_key` above, which is where the tests point. Do not move it
-    /// back inline: it looks testable and is not.
+    /// `WHILE INKEY$ <> "": WEND`, so keys pushed before it runs are lost.
+    /// A test drives it with `Qb::type_answers` instead. The per key logic
+    /// lives in `get_num_key` above, where it can be tested one key at a
+    /// time.
     pub async fn get_num(&mut self, row: i32, col: i32) -> Result<f64> {
         let mut result = String::new();
         self.qb.clear_keys();
@@ -778,10 +778,8 @@ mod tests {
 
     #[test]
     fn an_angle_over_360_is_rejected_and_entry_starts_again() {
-        // These drive `get_num_key` rather than `get_num`, because `get_num`
-        // clears the keyboard buffer on entry and then waits for a key, so
-        // headless it never terminates. Same reason `sparkle_pause`'s phase
-        // arithmetic lives outside that loop.
+        // These drive `get_num_key` directly, one key at a time, so each
+        // step's result can be checked, not just the final number.
         let mut buf = String::new();
         for c in "400".chars() {
             assert_eq!(get_num_key(&mut buf, c), Entry::Continue);
