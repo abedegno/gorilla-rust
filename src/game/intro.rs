@@ -209,6 +209,26 @@ mod tests {
         assert_eq!(&top[..6], "    * ");
         assert_eq!(&bottom[..6], "  *   ");
 
+        // Every phase in full: MID$(A$, A, 80) puts a star where
+        // (i + A - 1) is a multiple of 5, and MID$(A$, 6 - A, 80) where
+        // (i + 5 - A) is.
+        for phase in 0..5 {
+            let (top, bottom) = super::sparkle_rows(&pattern, phase);
+            let row = |start: usize| -> String {
+                (0..80)
+                    .map(|i| {
+                        if (i + start).is_multiple_of(5) {
+                            '*'
+                        } else {
+                            ' '
+                        }
+                    })
+                    .collect()
+            };
+            assert_eq!(top, row(phase), "top row at phase {phase}");
+            assert_eq!(bottom, row(4 - phase), "bottom row at phase {phase}");
+        }
+
         for b in 2..=21 {
             assert_eq!(super::sparkle_lit(0, b), b % 5 == 0, "phase 0 row {b}");
         }
@@ -256,6 +276,18 @@ mod tests {
             .flat_map(|y| (0..s.width).map(move |x| (x, y)))
             .map(|(x, y)| s.pixel_at(x, y))
             .collect()
+    }
+
+    #[test]
+    fn zero_points_or_three_digits_are_asked_again() {
+        for bad in ["0", "123"] {
+            let mut g = game_with_keys(&format!("A\rB\r{bad}\r4\r\r"));
+            let (_, _, games) = pollster::block_on(g.get_inputs()).unwrap();
+            assert_eq!(games, 4, "{bad} should have been asked again");
+        }
+        // Two digits is the most it takes.
+        let mut g = game_with_keys("A\rB\r99\r\r");
+        assert_eq!(pollster::block_on(g.get_inputs()).unwrap().2, 99);
     }
 
     #[test]

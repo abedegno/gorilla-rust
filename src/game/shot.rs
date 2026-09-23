@@ -642,6 +642,9 @@ mod tests {
         assert_eq!(classify(SUNATTR as i32, 10.0), Sample::Sun);
         // The same colour below SunHt is a building, not the sun.
         assert_eq!(classify(SUNATTR as i32, 300.0), Sample::Impact);
+        // SunHt itself is already below the sun.
+        assert_eq!(classify(SUNATTR as i32, SUN_HT as f64 - 0.5), Sample::Sun);
+        assert_eq!(classify(SUNATTR as i32, SUN_HT as f64), Sample::Impact);
         assert_eq!(classify(5, 10.0), Sample::Impact);
         // POINT gives -1 off the screen, which is an impact, not sky.
         assert_eq!(classify(-1, 10.0), Sample::Impact);
@@ -659,8 +662,101 @@ mod tests {
         // Far across, or below the sun: out.
         assert!(!sun_still_shading(true, mid + 21.0, 10.0));
         assert!(!sun_still_shading(true, mid, SUN_HT as f64 + 1.0));
+        // Both limits are inclusive: exactly SunHt down, or 20 to the left.
+        assert!(sun_still_shading(true, mid, SUN_HT as f64));
+        assert!(sun_still_shading(true, mid - 20.0, 10.0));
+        assert!(!sun_still_shading(true, mid - 21.0, 10.0));
         // And it never turns itself back on.
         assert!(!sun_still_shading(false, mid, 10.0));
+    }
+
+    #[test]
+    fn a_banana_on_the_left_half_blows_up_player_one() {
+        // ExplodeGorilla decides who was hit by which half of the screen
+        // the banana is in, and the middle column belongs to player 2.
+        let mut g = quiet_game(1);
+        g.gorilla_x = [100, 500];
+        g.gorilla_y = [200, 200];
+        for (x, want) in [(10.0, 1), (319.5, 1), (320.0, 2), (630.0, 2)] {
+            let hit = pollster::block_on(g.explode_gorilla(x, 200.0)).unwrap();
+            assert_eq!(hit, want, "a banana at x {x}");
+        }
+    }
+
+    #[test]
+    fn the_winner_dances_where_they_stand() {
+        for winner in [1usize, 2] {
+            let mut g = quiet_game(1);
+            for arms in [crate::game::LEFTUP, crate::game::RIGHTUP] {
+                g.draw_gorilla(300, 100, arms);
+            }
+            g.qb.screen.cls(0);
+            g.gorilla_x = [100, 500];
+            g.gorilla_y = [200, 150];
+            pollster::block_on(g.victory_dance(winner)).unwrap();
+            let (x, y) = (g.gorilla_x[winner - 1], g.gorilla_y[winner - 1]);
+            // The dance ends on the right arm up.
+            assert_eq!(
+                g.qb.screen.get(x, y, x + 29, y + 29),
+                g.gor_r,
+                "winner {winner}"
+            );
+            let lit = g.qb.screen.pixels.iter().filter(|&&p| p != 0).count();
+            let own = g.gor_r.pixels.iter().filter(|&&p| p != 0).count();
+            assert_eq!(lit, own, "winner {winner}: something else was drawn");
+        }
+    }
+
+    /// Fire one shot at a wall and report the box of wall pixels it
+    /// cleared, the player it hit, and whether it went through the sun.
+    fn crater(
+        player: usize,
+        from: (i32, i32),
+        wall: (i32, i32),
+        angle: f64,
+        velocity: f64,
+    ) -> ((i32, i32, i32, i32), usize, bool) {
+        let mut g = quiet_game(1);
+        for arms in [
+            crate::game::ARMSDOWN,
+            crate::game::LEFTUP,
+            crate::game::RIGHTUP,
+        ] {
+            g.draw_gorilla(300, 100, arms);
+        }
+        g.qb.screen.cls(0);
+        g.do_sun(false);
+        g.wind = 0;
+        g.gorilla_x = [from.0, from.0];
+        g.gorilla_y = [from.1, from.1];
+        g.qb.screen.line_fill(wall.0, 60, wall.1, 349, 5);
+        let hit =
+            pollster::block_on(g.plot_shot(from.0, from.1, aim(angle, player), velocity, player))
+                .unwrap();
+        let mut b = (i32::MAX, i32::MAX, i32::MIN, i32::MIN);
+        for y in 60..350 {
+            for x in wall.0..=wall.1 {
+                if g.qb.screen.pixel_at(x, y) != 5 {
+                    b = (b.0.min(x), b.1.min(y), b.2.max(x), b.3.max(y));
+                }
+            }
+        }
+        (b, hit, g.sun_hit)
+    }
+
+    #[test]
+    fn shots_land_where_they_always_have() {
+        // Regression pins. The trajectory arithmetic has its own test; these
+        // check plot_shot puts it together the same way: the angle in
+        // radians, the time step, the probe, and which way player 2 throws.
+        let right = crater(1, (60, 300), (400, 460), 45.0, 60.0);
+        assert_eq!(right, ((400, 263, 406, 273), 0, false));
+        let left = crater(2, (560, 300), (150, 210), 45.0, 60.0);
+        assert_eq!(left, ((204, 303, 210, 313), 0, false));
+        // Up through the sun, which notices, and down onto the top of the
+        // wall on the far side.
+        let lob = crater(1, (150, 300), (440, 500), 70.0, 80.0);
+        assert_eq!(lob, ((445, 60, 459, 65), 0, true));
     }
 
     #[test]
