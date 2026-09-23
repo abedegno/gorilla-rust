@@ -95,3 +95,22 @@ jobs:
 
       - name: Build
         run: cargo build
+
+  wasm:
+    name: Browser build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --lib --target wasm32-unknown-unknown
+
+      - name: Clippy
+        run: cargo clippy --lib --target wasm32-unknown-unknown

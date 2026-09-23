@@ -103,6 +103,28 @@ filesystem, which invalidates every capture taken afterwards.
 
 `reference/NOTES.md` records every measurement taken so far. Add to it.
 
+## The browser build
+
+The same code runs in a browser through a second backend in
+`src/qb/backend/web.rs`. To build and test it:
+
+```sh
+rustup target add wasm32-unknown-unknown
+web/build.sh     # the first run prints the exact wasm-bindgen-cli to install
+web/build.sh
+cd web
+npm ci
+npx playwright install
+npx playwright test
+```
+
+Serve it with `python3 -m http.server` from `web/`. The Playwright tests
+compare the canvas against the same fixtures the native tests use.
+
+Anything in `src/qb` or `src/game` that waits must go through `Qb::rest`
+or `Qb::wait_ms`, which are the only places a browser gets control back.
+A loop that spins without awaiting one of them freezes the page.
+
 ## Commits and pull requests
 
 Explain *why*, not what the diff already shows. If you changed behaviour to

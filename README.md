@@ -12,6 +12,10 @@ Two gorillas stand on a city skyline. You type an angle and a velocity, and
 throw an exploding banana at the other one. The wind pushes it sideways. The
 buildings get holes in them. Whoever is still standing wins.
 
+**[Play it in your browser](https://abedegno.github.io/gorilla-rust/)** —
+the same code, compiled to WebAssembly. On a phone or tablet an on-screen
+keypad appears for the angles and speeds.
+
 ![The game](docs/screenshot.png)
 
 ## What "pixel-faithful" means here
@@ -130,6 +134,7 @@ src/game/    The translation of gorilla.bas itself
 fixtures/    Framebuffer captures from the original, one byte per pixel
 reference/   How the measurements were taken: the probe programs run
              under DOS, the tooling, and NOTES.md recording every finding
+web/         The browser page, its build script and its Playwright tests
 ```
 
 The split matters. `src/qb` knows nothing about gorillas — it is the slice of
