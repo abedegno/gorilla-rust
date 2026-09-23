@@ -15,6 +15,8 @@ if [ "$want" != "$have" ]; then
   exit 1
 fi
 
-cargo build --release --lib --target wasm32-unknown-unknown
+# The library is an rlib everywhere else; only here is it a cdylib, the
+# form wasm-bindgen needs, so native builds do not link it twice.
+cargo rustc --release --lib --crate-type cdylib --target wasm32-unknown-unknown
 wasm-bindgen --target web --no-typescript --out-dir web/pkg \
   target/wasm32-unknown-unknown/release/gorillas.wasm

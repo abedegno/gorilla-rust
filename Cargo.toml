@@ -18,7 +18,6 @@ include = ["src/**", "assets/**", "README.md", "LICENSE", "CHANGELOG.md", "docs/
 [lib]
 name = "gorillas"
 path = "src/lib.rs"
-crate-type = ["cdylib", "rlib"]
 
 [[bin]]
 name = "gorilla-rust"
