@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
 import {
   INTRO,
+  CHOICE,
   BORDER,
   startGame,
   canvasDiff,
+  typeTheCapturedAnswers,
   spyOnAudio,
 } from './helpers.js';
 
@@ -12,6 +14,8 @@ import {
 // every tone is meant to reach the speakers only through the master gain.
 
 const oscillators = (page) => page.evaluate(() => window.__audio.oscillators);
+const contextState = (page) => page.evaluate(() => window.__audio.contexts[0]?.state);
+const suspend = (page) => page.evaluate(() => window.__audio.contexts[0].suspend());
 
 /** The gain of every node wired straight to the speakers. */
 const gainsToSpeakers = (page) =>
@@ -60,4 +64,51 @@ test('the mute button silences a tune that is already sounding', async ({ page }
   await page.click('#mute');
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'false');
   expect(await gainsToSpeakers(page)).toEqual([1]);
+});
+
+test('a key or a tap resumes sound the browser suspended', async ({ page }) => {
+  await spyOnAudio(page);
+  await startGame(page, '?seed=1');
+  await waitForIntro(page);
+  await expect.poll(() => contextState(page)).toBe('running');
+
+  await suspend(page);
+  expect(await contextState(page)).toBe('suspended');
+  // The name prompt that follows plays nothing, so only the key handler
+  // can be what resumes the context.
+  await page.keyboard.press('x');
+  await expect.poll(() => contextState(page)).toBe('running');
+
+  await suspend(page);
+  expect(await contextState(page)).toBe('suspended');
+  await page.mouse.click(10, 10);
+  await expect.poll(() => contextState(page)).toBe('running');
+});
+
+test('tunes are dropped, not piled up, while the context is suspended', async ({ page }) => {
+  await spyOnAudio(page);
+  await startGame(page, '?seed=1');
+  await waitForIntro(page);
+  await page.keyboard.press('x');
+  await typeTheCapturedAnswers(page);
+  await expect.poll(() => canvasDiff(page, CHOICE)).toEqual({ diff: 0 });
+
+  // Suspended, and kept so, as a browser that refuses to resume would.
+  await suspend(page);
+  await page.evaluate(() => {
+    window.__audio.blockResume = true;
+  });
+  const before = await oscillators(page);
+  const resumesBefore = await page.evaluate(() => window.__audio.resumes);
+
+  // View Intro: the gorillas dance to four tunes, the first a second after
+  // the screen changes to graphics.
+  await page.keyboard.press('v');
+  await expect.poll(() => page.evaluate(() => document.getElementById('screen').height)).toBe(350);
+  await page.waitForTimeout(2500);
+
+  expect(await contextState(page)).toBe('suspended');
+  expect(await oscillators(page)).toBe(before);
+  // The key asked once; each tune the game tried to play asked again.
+  expect(await page.evaluate(() => window.__audio.resumes)).toBeGreaterThan(resumesBefore + 1);
 });

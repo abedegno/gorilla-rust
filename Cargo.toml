@@ -38,6 +38,7 @@ wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = [
     "AudioContext",
+    "AudioContextState",
     "AudioDestinationNode",
     "AudioNode",
     "AudioParam",

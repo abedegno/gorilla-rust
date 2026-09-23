@@ -45,3 +45,10 @@ pub fn push_key(key: &str) {
 pub fn set_muted(muted: bool) {
     backend::set_muted(muted);
 }
+
+/// Resume sound the browser has suspended. The page calls this from its key
+/// and pointer handlers, because some browsers only allow it in a gesture.
+#[wasm_bindgen]
+pub fn resume_audio() {
+    backend::resume_audio();
+}

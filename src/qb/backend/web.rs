@@ -3,8 +3,9 @@
 //! The game awaits `sleep_ms` in every waiting loop, and that is the only
 //! point where the browser gets control back to paint the canvas and run
 //! the page's key handlers. Everything here is single threaded, so the key
-//! queue and the mute flag are thread locals the page can reach through
-//! the exported functions in `crate::web` at any time.
+//! queue, the mute flag, the audio context and `MASTER`, the gain node every
+//! tone passes through, are thread locals the page can reach through the
+//! exported functions in `crate::web` at any time.
 
 use crate::qb::screen::Screen;
 use crate::qb::sound::Note;
@@ -12,7 +13,8 @@ use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use wasm_bindgen::{Clamped, JsCast, JsValue};
 use web_sys::{
-    AudioContext, CanvasRenderingContext2d, GainNode, HtmlCanvasElement, ImageData, OscillatorType,
+    AudioContext, AudioContextState, CanvasRenderingContext2d, GainNode, HtmlCanvasElement,
+    ImageData, OscillatorType,
 };
 
 /// How long `Qb::wait_ms` sleeps between pumps: about one frame.
@@ -30,6 +32,9 @@ thread_local! {
     /// silences a tune that is already sounding, not just tunes that have
     /// not started yet.
     static MASTER: RefCell<Option<GainNode>> = const { RefCell::new(None) };
+    /// The game's audio context, kept here as well as in `Audio` so the
+    /// page's key and pointer handlers can resume it.
+    static CONTEXT: RefCell<Option<AudioContext>> = const { RefCell::new(None) };
 }
 
 pub fn push_key(c: char) {
@@ -41,6 +46,23 @@ pub fn set_muted(muted: bool) {
     MASTER.with(|m| {
         if let Some(gain) = m.borrow().as_ref() {
             gain.gain().set_value(if muted { 0.0 } else { 1.0 });
+        }
+    });
+}
+
+/// Resume the audio context if the browser has suspended it.
+///
+/// A browser may suspend a context when the page is hidden or the device is
+/// interrupted (a phone call, the lock screen), and some only let it resume
+/// inside a user gesture. So the page calls this from its key and pointer
+/// handlers, and `Audio::play` asks for a resume too, in case no gesture is
+/// needed.
+pub fn resume_audio() {
+    CONTEXT.with(|c| {
+        if let Some(ctx) = c.borrow().as_ref() {
+            if ctx.state() != AudioContextState::Running {
+                let _ = ctx.resume();
+            }
         }
     });
 }
@@ -124,6 +146,8 @@ impl Display {
 /// PC-speaker notes as square-wave oscillators.
 pub struct Audio {
     ctx: Option<AudioContext>,
+    /// When, on the context's clock, the last tune scheduled ends.
+    queued_until: f64,
 }
 
 impl Audio {
@@ -135,7 +159,10 @@ impl Audio {
     /// this from the start overlay's click.
     pub fn new(mute: bool) -> Audio {
         if mute {
-            return Audio { ctx: None };
+            return Audio {
+                ctx: None,
+                queued_until: 0.0,
+            };
         }
         let ctx = AudioContext::new().ok();
         if let Some(c) = &ctx {
@@ -147,17 +174,36 @@ impl Audio {
                 let _ = master.connect_with_audio_node(&c.destination());
                 MASTER.with(|m| *m.borrow_mut() = Some(master));
             }
+            CONTEXT.with(|slot| *slot.borrow_mut() = Some(c.clone()));
         }
-        Audio { ctx }
+        Audio {
+            ctx,
+            queued_until: 0.0,
+        }
     }
 
     /// Schedule `notes` back to back from now. Returns how long to wait when
     /// the tune is foreground and sounding, `None` when it is background,
     /// muted, or there is no audio — the same rule as the native backend.
+    ///
+    /// A suspended context's clock stands still, so notes scheduled on it
+    /// would all pile up at one instant and blare out together when it
+    /// resumed. Instead the tune is dropped, as a muted one is, and the
+    /// context is asked to resume for the next. The one exception is a new
+    /// context whose clock has not started yet: it is still suspended when
+    /// the intro tune arrives in some browsers, and starts a moment later,
+    /// so that first tune is scheduled and plays when it does.
     pub fn play(&mut self, notes: &[Note], foreground: bool) -> Option<f64> {
         let ctx = self.ctx.as_ref()?;
         if MUTED.with(Cell::get) || notes.is_empty() {
             return None;
+        }
+        if ctx.state() != AudioContextState::Running {
+            let _ = ctx.resume();
+            let never_started = ctx.current_time() == 0.0 && self.queued_until == 0.0;
+            if !never_started {
+                return None;
+            }
         }
         let mut at = ctx.current_time();
         for n in notes {
@@ -167,6 +213,7 @@ impl Audio {
             }
             at += secs;
         }
+        self.queued_until = at;
         foreground.then(|| notes.iter().map(|n| n.ms).sum())
     }
 }

@@ -65,7 +65,7 @@ async function main() {
     showError(`This browser could not load the game: ${e}`);
     return;
   }
-  const { start, push_key, set_muted } = wasm;
+  const { start, push_key, set_muted, resume_audio } = wasm;
 
   // The overlay stays disabled, reading "Loading…", until now, so a tap
   // made before the game could start is not silently lost.
@@ -97,11 +97,20 @@ async function main() {
 
   // On window, not the canvas, so the keyboard works whatever was clicked.
   window.addEventListener('keydown', (e) => {
-    if (!started || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!started) return;
+    // Any key is a user gesture, the moment a browser allows sound that it
+    // suspended to resume.
+    resume_audio();
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     const c = keyToChar(e.key);
     if (c === null) return;
     e.preventDefault();
     push_key(c);
+  });
+
+  // A tap anywhere is a gesture too, for a player with no keyboard.
+  window.addEventListener('pointerdown', () => {
+    if (started) resume_audio();
   });
 
   for (const button of document.querySelectorAll('#keypad button')) {

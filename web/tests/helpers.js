@@ -41,8 +41,10 @@ export async function typeTheCapturedAnswers(page) {
  * Watch what the game does with Web Audio, from before the page loads.
  *
  * `window.__audio` counts the oscillators made (one per note), keeps the
- * contexts and the latest time any note was told to stop, and lists the
- * nodes connected straight to a destination.
+ * contexts and the latest time any note was told to stop, lists the nodes
+ * connected straight to a destination, and counts calls to resume. Setting
+ * `window.__audio.blockResume` makes resume do nothing, as a browser that
+ * refuses it outside a gesture would.
  */
 export async function spyOnAudio(page) {
   await page.addInitScript(() => {
@@ -51,6 +53,8 @@ export async function spyOnAudio(page) {
       contexts: [],
       lastStop: 0,
       toDestination: [],
+      resumes: 0,
+      blockResume: false,
     };
     window.__audio = spy;
 
@@ -69,6 +73,11 @@ export async function spyOnAudio(page) {
     AudioNode.prototype.connect = function (target, ...rest) {
       if (target instanceof AudioDestinationNode) spy.toDestination.push(this);
       return connect.call(this, target, ...rest);
+    };
+    const resume = Context.prototype.resume;
+    Context.prototype.resume = function () {
+      spy.resumes++;
+      return spy.blockResume ? Promise.resolve() : resume.call(this);
     };
     window.AudioContext = class extends Context {
       constructor(...args) {
