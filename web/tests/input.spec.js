@@ -60,7 +60,15 @@ test('the mute choice is remembered', async ({ page }) => {
 test('Backspace and Space stay in the game', async ({ page }) => {
   // A short viewport, so the page could scroll if Space were let through.
   await page.setViewportSize({ width: 800, height: 300 });
-  await startGame(page);
+  await page.goto('/index.html?seed=1&mute');
+  await expect(page.locator('#start')).toBeEnabled();
+  const pageHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+  expect(pageHeight, 'the page is taller than the window, so it could scroll').toBeGreaterThan(300);
+  // Short as the window is, the start button is wholly in view.
+  const start = await page.locator('#start').boundingBox();
+  expect(start.y).toBeGreaterThanOrEqual(0);
+  expect(start.y + start.height).toBeLessThanOrEqual(300);
+  await page.click('#start');
   await waitForIntro(page);
   const url = page.url();
   await page.keyboard.press('x');

@@ -4,6 +4,15 @@
   --fg: #aaa;
   --accent: #55ffff;
   --button: #222;
+  /* The layout's measurements, named so the screen's size below can be
+     worked out from them rather than guessed. */
+  --pad: 16px;
+  --gap: 12px;
+  --control-h: 38px;
+  --key: 56px;
+  /* Everything in a column that is not the screen: the page's padding
+     above and below, and the mute button with the gap above it. */
+  --reserve: calc(2 * var(--pad) + var(--gap) + var(--control-h));
 }
 
 * { box-sizing: border-box; }
@@ -19,13 +28,20 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
+  gap: var(--gap);
+  padding: var(--pad);
 }
 
+/* As wide as the page allows, but never so tall that the start button,
+   or the mute button below it, is out of view: a short window must not
+   need scrolling to begin. The width that gives a screen of the height
+   left over is that height times 640 / 350. dvh, where the browser has
+   it, is the height with a phone's address bar showing; vh comes first
+   as the fallback. */
 .stage {
   position: relative;
-  width: min(100%, 1280px);
+  width: min(100%, 1280px, calc((100vh - var(--reserve)) * 640 / 350));
+  width: min(100%, 1280px, calc((100dvh - var(--reserve)) * 640 / 350));
 }
 
 /* The canvas switches between 640x350 and 640x400. The box keeps the
@@ -41,16 +57,6 @@ main {
      the last, and pixelated is the one that keeps every pixel square. */
   image-rendering: crisp-edges;
   image-rendering: pixelated;
-}
-
-/* On a short (landscape phone or a cramped window) viewport, width alone
-   would make the canvas taller than the window, forcing the page to
-   scroll just to bring the start button fully into view. Bound it by
-   height too, so a short window never needs to scroll to start. */
-@media (max-height: 480px) {
-  #screen {
-    max-height: calc(100vh - 120px);
-  }
 }
 
 .overlay {
@@ -78,7 +84,10 @@ main {
   -webkit-user-select: none;
 }
 
-.controls button { padding: 6px 14px; }
+.controls button {
+  height: var(--control-h);
+  padding: 0 14px;
+}
 
 #keypad { display: none; }
 
@@ -90,10 +99,43 @@ main {
     width: min(100%, 420px);
   }
   #keypad button {
-    min-height: 56px;
+    min-height: var(--key);
     font-size: 22px;
   }
   #keypad .enter { grid-column: span 2; }
+}
+
+/* A phone on its side has too little height for the screen and the keypad
+   one above the other, so the keypad goes beside the screen, with square
+   keys small enough that its four rows and the mute button fit in the
+   height of a small phone. The screen takes the width that is left, and
+   no more than the whole height allows. */
+@media (pointer: coarse) and (orientation: landscape) {
+  :root {
+    --pad: 8px;
+    --key: 48px;
+    --keypad-w: calc(4 * var(--key) + 3 * 8px);
+  }
+  main {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto 1fr;
+    justify-content: center;
+    align-items: start;
+  }
+  .stage {
+    grid-row: 1 / span 2;
+    width: min(calc((100vh - 2 * var(--pad)) * 640 / 350),
+               calc(100vw - 2 * var(--pad) - var(--gap) - var(--keypad-w)));
+    width: min(calc((100dvh - 2 * var(--pad)) * 640 / 350),
+               calc(100vw - 2 * var(--pad) - var(--gap) - var(--keypad-w)));
+  }
+  .controls { grid-column: 2; }
+  #keypad {
+    grid-column: 2;
+    width: var(--keypad-w);
+  }
+  #error { grid-column: 1 / -1; }
 }
 
 #error { color: #ff5555; }
