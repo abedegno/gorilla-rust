@@ -14,7 +14,8 @@ buildings get holes in them. Whoever is still standing wins.
 
 **[Play it in your browser](https://abedegno.github.io/gorilla-rust/)** —
 the same code, compiled to WebAssembly. On a phone or tablet an on-screen
-keypad appears for the angles and speeds.
+keypad appears for the angles and speeds, and its ABC key switches it to
+letters for typing the players' names.
 
 ![The game](docs/screenshot.png)
 

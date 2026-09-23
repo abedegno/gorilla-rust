@@ -10,6 +10,7 @@
   --gap: 12px;
   --control-h: 38px;
   --key: 56px;
+  --letter-key: 48px;
   /* Everything in a column that is not the screen: the page's padding
      above and below, and the mute button with the gap above it. */
   --reserve: calc(2 * var(--pad) + var(--gap) + var(--control-h));
@@ -93,16 +94,40 @@ main {
 
 @media (pointer: coarse) {
   #keypad {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
+    display: block;
     width: min(100%, 420px);
   }
+  #keypad .keys {
+    display: grid;
+    gap: 8px;
+  }
+  /* The hidden layout has to stay hidden: display: grid above would
+     otherwise override the hidden attribute. */
+  #keypad .keys[hidden] { display: none; }
   #keypad button {
     min-height: var(--key);
     font-size: 22px;
   }
-  #keypad .enter { grid-column: span 2; }
+  #keypad .digits { grid-template-columns: repeat(4, 1fr); }
+  /* Letters on a grid of twenty half-keys, so the middle row can start
+     half a key in, as on a real keyboard. Each letter spans two. */
+  #keypad .letters {
+    grid-template-columns: repeat(20, 1fr);
+    gap: 8px 4px;
+  }
+  #keypad .letters button {
+    grid-column: span 2;
+    min-height: var(--letter-key);
+    padding: 0;
+    font-size: 18px;
+  }
+  #keypad .letters .row2 { grid-column: 2 / span 2; }
+  #keypad .letters .shift,
+  #keypad .letters .back { grid-column: span 3; }
+  #keypad .letters .switch { grid-column: span 4; }
+  #keypad .letters .space { grid-column: span 10; }
+  #keypad .letters .enter { grid-column: span 6; }
+  #keypad .shift[aria-pressed="true"] { background: #555; color: #fff; }
 }
 
 /* A phone on its side has too little height for the screen and the keypad
@@ -134,6 +159,13 @@ main {
   #keypad {
     grid-column: 2;
     width: var(--keypad-w);
+  }
+  /* The letters need about ten keys across, so while they are showing the
+     keypad's column widens and the screen gives up the width. Only the
+     name prompt is on the screen then. */
+  main.letters {
+    --letter-key: 40px;
+    --keypad-w: calc(10 * 32px + 9 * 4px);
   }
   #error { grid-column: 1 / -1; }
 }

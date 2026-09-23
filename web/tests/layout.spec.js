@@ -48,16 +48,25 @@ for (const phone of phones) {
       await expectInView(page, '#mute');
     });
 
+    test('the letters fit without scrolling too', async ({ page }) => {
+      await startGame(page);
+      await page.locator('#keypad').getByRole('button', { name: 'ABC', exact: true }).tap();
+      await expect(page.locator('#keypad').getByRole('button', { name: 'q', exact: true })).toBeVisible();
+      await expectInView(page, '#screen');
+      await expectInView(page, '#keypad');
+      await expectInView(page, '#mute');
+    });
+
     test('the screen keeps its size when the game switches to graphics', async ({ page }) => {
       await startGame(page);
       // The default names, one game, the default gravity: the menu, still
       // on the 640 by 400 text screen.
       for (const key of ['Enter', 'Enter', 'Enter', '1', 'Enter', 'Enter']) {
-        await page.locator(`#keypad [data-key="${key}"]`).tap();
+        await page.locator(`#keypad [data-key="${key}"]:visible`).tap();
       }
       await expect.poll(() => page.evaluate(() => document.getElementById('screen').height)).toBe(400);
       const text = await page.locator('#screen').boundingBox();
-      await page.locator('#keypad [data-key="P"]').tap();
+      await page.locator('#keypad [data-key="P"]:visible').tap();
       await expect.poll(() => page.evaluate(() => document.getElementById('screen').height)).toBe(350);
       expect(await page.locator('#screen').boundingBox()).toEqual(text);
     });
