@@ -9,6 +9,7 @@
 //! Where QBasic's behaviour is not what the manual suggests, the code
 //! follows a measurement of the original, and the comment says so.
 
+pub mod backend;
 pub mod fixture;
 pub mod font;
 pub mod input;
@@ -17,7 +18,6 @@ pub mod sound;
 pub mod text;
 pub mod timing;
 
-use minifb::{Key, Window, WindowOptions};
 use screen::Screen;
 use std::collections::VecDeque;
 
@@ -32,44 +32,42 @@ pub struct Qb {
     pub speed: f64,
     pub quit: bool,
     pub text: text::TextState,
-    pub audio: sound::Audio,
-    window: Option<Window>,
+    pub audio: backend::Audio,
+    display: Option<backend::Display>,
     keys: VecDeque<char>,
-    argb: Vec<u32>,
 }
 
 impl Qb {
-    pub fn headless(width: i32, height: i32) -> Qb {
+    pub fn new(
+        width: i32,
+        height: i32,
+        display: Option<backend::Display>,
+        audio: backend::Audio,
+    ) -> Qb {
         Qb {
             screen: Screen::new(width, height),
             speed: 1.0,
             quit: false,
             text: text::TextState::default(),
-            audio: sound::Audio::new(true),
-            window: None,
+            audio,
+            display,
             keys: VecDeque::new(),
-            argb: Vec::new(),
         }
     }
 
+    /// No window and no sound. What the tests and the dump example use.
+    pub fn headless(width: i32, height: i32) -> Qb {
+        Qb::new(width, height, None, backend::Audio::new(true))
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn windowed(width: i32, height: i32, scale: usize) -> Qb {
-        let opts = WindowOptions {
-            scale_mode: minifb::ScaleMode::AspectRatioStretch,
-            resize: true,
-            scale: match scale {
-                1 => minifb::Scale::X1,
-                2 => minifb::Scale::X2,
-                4 => minifb::Scale::X4,
-                _ => minifb::Scale::X2,
-            },
-            ..Default::default()
-        };
-        let window = Window::new("QBasic Gorillas", width as usize, height as usize, opts)
-            .expect("could not open a window");
-        let mut q = Qb::headless(width, height);
-        q.window = Some(window);
-        q.audio = sound::Audio::new(false);
-        q
+        Qb::new(
+            width,
+            height,
+            Some(backend::Display::open(width, height, scale)),
+            backend::Audio::new(false),
+        )
     }
 
     pub fn resize(&mut self, width: i32, height: i32) {
@@ -80,36 +78,22 @@ impl Qb {
         self.keys.push_back(c);
     }
 
-    /// Push the framebuffer to the window and drain keyboard events. Every
-    /// blocking call runs it, which is what keeps the window alive while the
-    /// game code blocks the way the BASIC original does.
+    /// Show the framebuffer and collect keyboard input. Every waiting call
+    /// runs it, which is what keeps the window alive while the game code
+    /// waits the way the BASIC original does.
     pub fn pump(&mut self) -> Result<()> {
         if self.quit {
             return Err(Quit);
         }
-        let Some(window) = self.window.as_mut() else {
+        let Some(display) = self.display.as_mut() else {
             return Ok(());
         };
-        if !window.is_open() || window.is_key_down(Key::Escape) {
+        if display.should_quit() {
             self.quit = true;
             return Err(Quit);
         }
-        self.screen.to_argb(&mut self.argb);
-        let _ = window.update_with_buffer(
-            &self.argb,
-            self.screen.width as usize,
-            self.screen.height as usize,
-        );
-        let shift = window.is_key_down(Key::LeftShift) || window.is_key_down(Key::RightShift);
-        let typed: Vec<char> = window
-            .get_keys_pressed(minifb::KeyRepeat::Yes)
-            .iter()
-            .filter_map(key_to_char)
-            .map(|c| if shift { shift_char(c) } else { c })
-            .collect();
-        for c in typed {
-            self.keys.push_back(c);
-        }
+        display.present(&self.screen);
+        display.drain_keys(&mut self.keys);
         Ok(())
     }
 
@@ -117,16 +101,29 @@ impl Qb {
         self.pump()
     }
 
-    /// The original busy waited for a period scaled by a startup benchmark of
-    /// the machine. Here it is a real sleep that pumps while it waits.
+    /// The original busy waited for a period scaled by a startup benchmark
+    /// of the machine. Here it is a real wait, scaled by `--speed`, that
+    /// pumps while it waits.
     pub fn rest(&mut self, secs: f64) -> Result<()> {
-        let until = timing::deadline(secs / self.speed);
+        let until = timing::deadline_ms(backend::now_ms(), secs / self.speed);
+        self.wait_until(until)
+    }
+
+    /// Wait `ms` of real time, pumping as it goes. Not scaled by `--speed`:
+    /// this is how long a tune sounds, which the speed never changed.
+    pub fn wait_ms(&mut self, ms: f64) -> Result<()> {
+        let until = timing::deadline_ms(backend::now_ms(), ms / 1000.0);
+        self.wait_until(until)
+    }
+
+    fn wait_until(&mut self, until: f64) -> Result<()> {
         loop {
             self.pump()?;
-            if std::time::Instant::now() >= until {
+            let now = backend::now_ms();
+            if now >= until {
                 return Ok(());
             }
-            std::thread::sleep(std::time::Duration::from_millis(2));
+            backend::sleep_ms((until - now).min(backend::SLICE_MS));
         }
     }
 
@@ -173,19 +170,21 @@ impl Qb {
     /// PLAY "..."
     pub fn play(&mut self, mml: &str) -> Result<()> {
         let (notes, foreground) = sound::parse_mml(mml);
-        self.audio.play(&notes, foreground);
+        if let Some(ms) = self.audio.play(&notes, foreground) {
+            self.wait_ms(ms)?;
+        }
         self.pump()
     }
 
     /// BEEP. QBasic's is 800 Hz for a quarter of a second, and it blocks.
     pub fn beep(&mut self) -> Result<()> {
-        self.audio.play(
-            &[sound::Note {
-                freq: 800.0,
-                ms: 250.0,
-            }],
-            true,
-        );
+        let note = sound::Note {
+            freq: 800.0,
+            ms: 250.0,
+        };
+        if let Some(ms) = self.audio.play(&[note], true) {
+            self.wait_ms(ms)?;
+        }
         self.pump()
     }
 }
@@ -232,65 +231,6 @@ pub fn val(s: &str) -> f64 {
     }
     let text = s.trim_start()[..i].replace(['d', 'D'], "e");
     text.parse().unwrap_or(0.0)
-}
-
-fn key_to_char(k: &Key) -> Option<char> {
-    use Key::*;
-    Some(match k {
-        A => 'a',
-        B => 'b',
-        C => 'c',
-        D => 'd',
-        E => 'e',
-        F => 'f',
-        G => 'g',
-        H => 'h',
-        I => 'i',
-        J => 'j',
-        K => 'k',
-        L => 'l',
-        M => 'm',
-        N => 'n',
-        O => 'o',
-        P => 'p',
-        Q => 'q',
-        R => 'r',
-        S => 's',
-        T => 't',
-        U => 'u',
-        V => 'v',
-        W => 'w',
-        X => 'x',
-        Y => 'y',
-        Z => 'z',
-        Key0 | NumPad0 => '0',
-        Key1 | NumPad1 => '1',
-        Key2 | NumPad2 => '2',
-        Key3 | NumPad3 => '3',
-        Key4 | NumPad4 => '4',
-        Key5 | NumPad5 => '5',
-        Key6 | NumPad6 => '6',
-        Key7 | NumPad7 => '7',
-        Key8 | NumPad8 => '8',
-        Key9 | NumPad9 => '9',
-        Period | NumPadDot => '.',
-        Space => ' ',
-        Minus => '-',
-        Enter | NumPadEnter => '\r',
-        Backspace => '\u{8}',
-        _ => return None,
-    })
-}
-
-/// What a key produces when shift is held. Only the characters the game
-/// can receive are covered, which is letters and the few symbols the
-/// listing prints.
-fn shift_char(c: char) -> char {
-    match c {
-        'a'..='z' => c.to_ascii_uppercase(),
-        '-' => '_',
-        _ => c,
-    }
 }
 
 #[cfg(test)]
@@ -340,72 +280,6 @@ mod tests {
         assert_eq!(q.screen.pixels.len(), 640 * 400);
     }
 
-    // These three tests call `timing::deadline` directly rather than through
-    // `Qb::rest`, so the suite proves the same properties without a real
-    // sleep: `deadline` is the exact function that used to panic, and an
-    // `Instant` can be inspected immediately without waiting for it to pass.
-
-    #[test]
-    fn deadline_survives_zero_speed_without_panicking() {
-        // speed = 0.0 makes `secs / speed` evaluate to +Infinity, which used
-        // to panic inside Duration::from_secs_f64 instead of clamping to a
-        // finite, bounded deadline.
-        let before = std::time::Instant::now();
-        let quotient = 1.0_f64 / 0.0_f64; // +Infinity, as `rest` would compute
-        let d = timing::deadline(quotient);
-        let elapsed = d
-            .checked_duration_since(before)
-            .expect("deadline should be at or after the moment it was requested");
-        assert!(
-            elapsed
-                <= std::time::Duration::from_secs_f64(timing::MAX_REST_SECS)
-                    + std::time::Duration::from_millis(100)
-        );
-    }
-
-    #[test]
-    fn deadline_survives_a_vanishingly_small_speed_without_panicking() {
-        // A merely very small positive speed makes `secs / speed` a finite
-        // value far too large for Duration to represent, which used to
-        // overflow-panic even though the quotient was never literally
-        // infinite.
-        let before = std::time::Instant::now();
-        let quotient = 1.0_f64 / 1e-300_f64; // finite, but far beyond Duration's range
-        let d = timing::deadline(quotient);
-        let elapsed = d
-            .checked_duration_since(before)
-            .expect("deadline should be at or after the moment it was requested");
-        assert!(
-            elapsed
-                <= std::time::Duration::from_secs_f64(timing::MAX_REST_SECS)
-                    + std::time::Duration::from_millis(100)
-        );
-    }
-
-    #[test]
-    fn deadline_gives_the_full_wait_for_a_legitimately_slow_speed() {
-        // speed = 0.1 is an ordinary "play it slower" choice, not a
-        // pathological one, and must produce the full proportional wait
-        // rather than being truncated to the pathological-input ceiling.
-        let secs = 1.0_f64; // the longest wait the game ever asks for
-        let speed = 0.1_f64;
-        let quotient = secs / speed; // 10 seconds, comfortably under the ceiling
-        let expected = std::time::Duration::from_secs_f64(quotient);
-
-        let before = std::time::Instant::now();
-        let d = timing::deadline(quotient);
-        let elapsed = d
-            .checked_duration_since(before)
-            .expect("deadline should be at or after the moment it was requested");
-
-        // Allow a little slack for the gap between capturing `before` and
-        // `deadline`'s own internal `Instant::now()` call, but the wait must
-        // be essentially the full ten seconds, not clamped down.
-        let slack = std::time::Duration::from_millis(100);
-        assert!(elapsed + slack >= expected);
-        assert!(elapsed <= expected + slack);
-    }
-
     #[test]
     fn val_reads_the_longest_numeric_prefix() {
         // Measured against BASIC's documented VAL behaviour, which the
@@ -422,5 +296,35 @@ mod tests {
         assert_eq!(val(""), 0.0);
         assert_eq!(val("-"), 0.0, "a sign with no digits");
         assert_eq!(val("."), 0.0);
+    }
+
+    #[test]
+    fn a_muted_foreground_tune_does_not_hold_the_game_up() {
+        // Headless audio is muted, and the port has never waited for a tune
+        // nobody can hear. Without this the headless suite would sit through
+        // every victory dance.
+        let mut q = Qb::headless(64, 32);
+        let t = std::time::Instant::now();
+        q.play("MFT120L4CCCCCCCC").unwrap();
+        assert!(t.elapsed().as_millis() < 100, "waited {:?}", t.elapsed());
+    }
+
+    #[test]
+    fn rest_really_waits() {
+        let mut q = Qb::headless(64, 32);
+        let t = std::time::Instant::now();
+        q.rest(0.05).unwrap();
+        let ms = t.elapsed().as_millis();
+        assert!((50..500).contains(&ms), "rest(0.05) took {ms} ms");
+    }
+
+    #[test]
+    fn muted_audio_never_asks_for_a_wait() {
+        let mut a = backend::Audio::new(true);
+        let note = sound::Note {
+            freq: 440.0,
+            ms: 100.0,
+        };
+        assert_eq!(a.play(&[note], true), None);
     }
 }

@@ -93,7 +93,7 @@ fn main() {
     let mut qb = Qb::windowed(640, 350, cfg.scale);
     qb.speed = cfg.speed;
     if cfg.mute {
-        qb.audio = gorillas::qb::sound::Audio::new(true);
+        qb.audio = gorillas::qb::backend::Audio::new(true);
     }
     let mut game = Game::new(qb, cfg.seed);
     // A closed window unwinds out of the whole game, which is not an error.
