@@ -42,6 +42,11 @@ exclude_re = [
     "screen\\.rs:.*replace \\* with [+/] in Screen::to_rgba",
     # cls_view's right edge: line_fill clamps to the screen anyway.
     "text\\.rs:59:56:",
+    # The trajectory's y is scaled by ScrHeight / 350, which in mode 9 is
+    # exactly 1, so multiplying and dividing by it agree.
+    "shot\\.rs:88:71: replace \\* with / in Trajectory::at",
+    # Zero wind returns before the arrow's direction is chosen.
+    "replace > with >= in Game::draw_wind_arrow",
     # Without the sleep, wait_ms spins on the clock to the same deadline.
     # Only the CPU use differs.
     "replace sleep_ms with \\(\\)",
