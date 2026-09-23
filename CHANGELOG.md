@@ -6,6 +6,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-23
+
 ### Added
 
 - A browser version at https://abedegno.github.io/gorilla-rust/, built
@@ -13,6 +15,11 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   on touch devices that switches between numbers and letters, so players
   can type their names. Its intro and menu screens are tested against the
   captures from the original in Chromium, Firefox and WebKit.
+
+### Changed
+
+- On the desktop the window stays responsive while a tune plays, so
+  Escape quits mid-tune instead of waiting for it to finish.
 
 ## [1.1.0] - 2026-09-23
 
@@ -44,6 +51,7 @@ First release. The game is complete and playable end to end.
 - Command line flags for the seed, speed, window scale and muting.
 - Tooling under `reference/` for capturing and comparing framebuffers.
 
-[Unreleased]: https://github.com/abedegno/gorilla-rust/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/abedegno/gorilla-rust/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.2.0
 [1.1.0]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.1.0
 [1.0.0]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.0.0
