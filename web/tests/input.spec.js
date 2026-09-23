@@ -138,4 +138,42 @@ test.describe('on a touch screen', () => {
     // So compare from the points prompt, row 11, downwards.
     await expect.poll(() => canvasDiff(page, CHOICE, { minRow: 11 })).toEqual({ diff: 0 });
   });
+
+  test('every keypad button types what the keyboard would', async ({ page }) => {
+    // Each character button in turn, then 0 again and Backspace to take it
+    // off, typed at the first name prompt. A button whose data-key is
+    // wrong would leave a different name on the screen.
+    const chars = ['7', '8', '9', '4', '5', '6', 'V', '1', '2', '3', 'P', '0', '.'];
+    const snapshot = () => page.evaluate(() => document.getElementById('screen').toDataURL());
+    const atThePrompt = async () => {
+      await startGame(page);
+      await waitForIntro(page);
+      await page.keyboard.press('x'); // any key leaves the intro
+      // The prompt is drawn once the intro has gone, on a 640 by 400 screen.
+      await expect.poll(() => canvasDiff(page, INTRO, BORDER)).not.toEqual({ diff: 0 });
+      await page.waitForTimeout(200);
+    };
+
+    // The keyboard first: the game takes one key per pass of its input
+    // loop, so it is given a whole second to echo them all.
+    await atThePrompt();
+    const empty = await snapshot();
+    await page.keyboard.type(chars.join('') + '0');
+    await page.keyboard.press('Backspace');
+    await page.waitForTimeout(1000);
+    const typed = await snapshot();
+    expect(typed === empty, 'the typed name is on the screen').toBe(false);
+
+    await atThePrompt();
+    // By the name a player sees, not by data-key, which is what is on trial.
+    const keypad = page.locator('#keypad');
+    for (const name of [...chars, '0', 'Backspace']) {
+      await keypad.getByRole('button', { name, exact: true }).tap();
+    }
+    await expect
+      .poll(async () => (await snapshot()) === typed, {
+        message: 'the keypad left the same name on the screen as the keyboard',
+      })
+      .toBe(true);
+  });
 });
