@@ -10,6 +10,9 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - A macOS app, `Gorillas.app`, with the gorilla as its icon, in a disk
   image on each release: open it and drag the app to Applications.
+- Homebrew packages for macOS and Linux: `brew install
+  abedegno/tap/gorilla-rust` for the command, and `brew install --cask
+  abedegno/tap/gorillas` for the app. Each release updates them.
 
 ### Changed
 
@@ -17,6 +20,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   notarized by Apple, so Gatekeeper opens them without a warning. The app
   and the disk image carry their notarization with them, so they open
   offline too.
+- The install instructions no longer tell macOS users to clear the
+  quarantine flag, since releases are signed.
 
 ## [1.3.0] - 2026-09-23
 
