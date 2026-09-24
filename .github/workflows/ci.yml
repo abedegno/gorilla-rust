@@ -81,6 +81,7 @@ jobs:
       - name: Packaging scripts
         run: |
           packaging/test-version.sh
+          packaging/test-workflows.sh
           packaging/homebrew/test-render.sh
 
   msrv:

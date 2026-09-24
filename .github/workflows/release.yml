@@ -87,12 +87,8 @@ jobs:
     # Three notarizations usually take a few minutes each. This stops a
     # stuck one from holding the job for the six hour default.
     timeout-minutes: 60
-    env:
-      MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
-      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-      APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+    # The signing secrets are given only to the steps that use them, never
+    # to one that runs cargo, since crates' build scripts run there.
     steps:
       - uses: actions/checkout@v7
         with:
@@ -106,8 +102,12 @@ jobs:
 
       # Before anything is built, so a tag that disagrees with Cargo.toml
       # fails in seconds.
+      # An assignment, because a failing $(...) inside echo's arguments
+      # would not stop the step.
       - name: Read the version
-        run: echo "VERSION=$(packaging/version.sh)" >> "$GITHUB_ENV"
+        run: |
+          version="$(packaging/version.sh)"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
 
       # A release must be signed now that the project has a Developer ID,
       # so a tag push without the secrets is a mistake to stop. A manual
@@ -115,6 +115,12 @@ jobs:
       # dry runs work.
       - name: Decide whether to sign
         id: signing
+        env:
+          MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
           missing=""
           for name in MACOS_CERTIFICATE_P12 MACOS_CERTIFICATE_PASSWORD APPLE_API_KEY_P8 APPLE_API_KEY_ID APPLE_API_ISSUER_ID; do
@@ -150,6 +156,10 @@ jobs:
 
       - name: Import the signing certificate
         if: steps.signing.outputs.enabled == 'true'
+        env:
+          MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
         run: |
           keychain="$RUNNER_TEMP/signing.keychain-db"
           keychain_password="$(openssl rand -base64 24)"
@@ -178,6 +188,9 @@ jobs:
       # confirms this one online the first time it runs.
       - name: Sign and notarize the binary
         if: steps.signing.outputs.enabled == 'true'
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
           codesign --force --options runtime --timestamp \
             --sign "$SIGNING_IDENTITY" dist/gorilla-rust
@@ -192,6 +205,9 @@ jobs:
       # and a window and sound output need no entitlements.
       - name: Sign, notarize and staple the app
         if: steps.signing.outputs.enabled == 'true'
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
           codesign --force --options runtime --timestamp \
             --sign "$SIGNING_IDENTITY" dist/Gorillas.app
@@ -210,6 +226,9 @@ jobs:
 
       - name: Sign, notarize and staple the disk image
         if: steps.signing.outputs.enabled == 'true'
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
           codesign --force --timestamp --sign "$SIGNING_IDENTITY" "dist/Gorillas-$VERSION.dmg"
           packaging/macos/notarize.sh "dist/Gorillas-$VERSION.dmg"
