@@ -5,7 +5,9 @@
 #
 # Usage: make-app.sh VERSION BINARY ICON_PNG OUT_DIR
 set -euo pipefail
-if [ $# -ne 4 ]; then
+# An empty version would give the app no version and the disk image the
+# name Gorillas-.dmg.
+if [ $# -ne 4 ] || [ -z "$1" ]; then
   echo "usage: make-app.sh VERSION BINARY ICON_PNG OUT_DIR" >&2
   exit 2
 fi
