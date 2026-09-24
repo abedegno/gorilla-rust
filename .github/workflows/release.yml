@@ -1,8 +1,8 @@
 name: Release
 
 # A tag push builds everything and publishes a release. Running it by hand
-# builds the same artifacts from any ref without publishing, which is how
-# to check the macOS signing after changing the secrets.
+# builds the same artifacts from any ref without publishing anything, which
+# is how to check a change to the release itself; see docs/releasing.md.
 on:
   push:
     tags: ["v*"]
@@ -84,6 +84,9 @@ jobs:
   macos:
     name: universal-apple-darwin
     runs-on: macos-latest
+    # Three notarizations usually take a few minutes each. This stops a
+    # stuck one from holding the job for the six hour default.
+    timeout-minutes: 60
     env:
       MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
       MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
@@ -101,6 +104,32 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      # Before anything is built, so a tag that disagrees with Cargo.toml
+      # fails in seconds.
+      - name: Read the version
+        run: echo "VERSION=$(packaging/version.sh)" >> "$GITHUB_ENV"
+
+      # A release must be signed now that the project has a Developer ID,
+      # so a tag push without the secrets is a mistake to stop. A manual
+      # run without them still builds, unsigned, which is how forks and
+      # dry runs work.
+      - name: Decide whether to sign
+        id: signing
+        run: |
+          missing=""
+          for name in MACOS_CERTIFICATE_P12 MACOS_CERTIFICATE_PASSWORD APPLE_API_KEY_P8 APPLE_API_KEY_ID APPLE_API_ISSUER_ID; do
+            if [ -z "${!name}" ]; then missing="$missing $name"; fi
+          done
+          if [ -z "$missing" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          elif [ "$GITHUB_EVENT_NAME" = push ]; then
+            echo "::error::A release must be signed, and these secrets are not set:$missing. See docs/releasing.md."
+            exit 1
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::These secrets are not set:$missing. This build is unsigned, and Gatekeeper will block it."
+          fi
+
       # Apple's SDK is universal, so both slices build on the arm64 runner.
       - name: Build both architectures
         run: |
@@ -115,15 +144,9 @@ jobs:
             target/x86_64-apple-darwin/release/gorilla-rust
           lipo -info dist/gorilla-rust
 
-      - name: Decide whether to sign
-        id: signing
-        run: |
-          if [ -n "$MACOS_CERTIFICATE_P12" ] && [ -n "$APPLE_API_KEY_P8" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Signing secrets are not set, so this macOS build is unsigned and Gatekeeper will block it."
-          fi
+      # The same target as the build above, so it reuses its dependencies.
+      - name: Draw the icon
+        run: cargo run --release --target aarch64-apple-darwin --example icon -- "$RUNNER_TEMP/icon.png"
 
       - name: Import the signing certificate
         if: steps.signing.outputs.enabled == 'true'
@@ -141,44 +164,71 @@ jobs:
             -k "$keychain_password" "$keychain"
           security list-keychains -d user -s "$keychain" \
             $(security list-keychains -d user | tr -d '"')
-
-      - name: Sign
-        if: steps.signing.outputs.enabled == 'true'
-        run: |
-          identity="$(security find-identity -v -p codesigning \
-            "$RUNNER_TEMP/signing.keychain-db" \
+          identity="$(security find-identity -v -p codesigning "$keychain" \
             | grep 'Developer ID Application' | head -1 | awk -F'"' '{print $2}')"
           if [ -z "$identity" ]; then
             echo "::error::No Developer ID Application identity in the certificate."
             exit 1
           fi
-          codesign --force --options runtime --timestamp \
-            --sign "$identity" dist/gorilla-rust
-          codesign --verify --strict --verbose=2 dist/gorilla-rust
+          echo "SIGNING_IDENTITY=$identity" >> "$GITHUB_ENV"
+          echo "$APPLE_API_KEY_P8" | base64 --decode > "$RUNNER_TEMP/api_key.p8"
+          echo "APPLE_API_KEY_PATH=$RUNNER_TEMP/api_key.p8" >> "$GITHUB_ENV"
 
       # A bare executable cannot have its ticket stapled, so Gatekeeper
-      # confirms notarization online the first time the binary runs.
-      - name: Notarize
+      # confirms this one online the first time it runs.
+      - name: Sign and notarize the binary
         if: steps.signing.outputs.enabled == 'true'
         run: |
-          echo "$APPLE_API_KEY_P8" | base64 --decode > "$RUNNER_TEMP/api_key.p8"
-          ditto -c -k --keepParent dist/gorilla-rust "$RUNNER_TEMP/notarize.zip"
-          xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" \
-            --key "$RUNNER_TEMP/api_key.p8" \
-            --key-id "$APPLE_API_KEY_ID" \
-            --issuer "$APPLE_API_ISSUER_ID" \
-            --wait --output-format json > "$RUNNER_TEMP/notary.json"
-          cat "$RUNNER_TEMP/notary.json"
-          status="$(plutil -extract status raw "$RUNNER_TEMP/notary.json")"
-          if [ "$status" != "Accepted" ]; then
-            id="$(plutil -extract id raw "$RUNNER_TEMP/notary.json")"
-            xcrun notarytool log "$id" \
-              --key "$RUNNER_TEMP/api_key.p8" \
-              --key-id "$APPLE_API_KEY_ID" \
-              --issuer "$APPLE_API_ISSUER_ID"
-            echo "::error::Notarization finished with status $status."
-            exit 1
-          fi
+          codesign --force --options runtime --timestamp \
+            --sign "$SIGNING_IDENTITY" dist/gorilla-rust
+          ditto -c -k --keepParent dist/gorilla-rust "$RUNNER_TEMP/binary.zip"
+          packaging/macos/notarize.sh "$RUNNER_TEMP/binary.zip"
+
+      - name: Build the app
+        run: packaging/macos/make-app.sh "$VERSION" dist/gorilla-rust "$RUNNER_TEMP/icon.png" dist
+
+      # Stapled before it goes in the disk image, so the app opens offline
+      # even after it is copied out. No --deep: the bundle holds one binary,
+      # and a window and sound output need no entitlements.
+      - name: Sign, notarize and staple the app
+        if: steps.signing.outputs.enabled == 'true'
+        run: |
+          codesign --force --options runtime --timestamp \
+            --sign "$SIGNING_IDENTITY" dist/Gorillas.app
+          ditto -c -k --keepParent dist/Gorillas.app "$RUNNER_TEMP/app.zip"
+          packaging/macos/notarize.sh "$RUNNER_TEMP/app.zip"
+          xcrun stapler staple dist/Gorillas.app
+
+      # Apple Silicon will not run a bundle whose seal is broken, and
+      # copying the binary in and adding Info.plist broke it.
+      - name: Sign the app ad hoc
+        if: steps.signing.outputs.enabled != 'true'
+        run: codesign --force --sign - dist/Gorillas.app
+
+      - name: Build the disk image
+        run: packaging/macos/make-dmg.sh dist/Gorillas.app "dist/Gorillas-$VERSION.dmg"
+
+      - name: Sign, notarize and staple the disk image
+        if: steps.signing.outputs.enabled == 'true'
+        run: |
+          codesign --force --timestamp --sign "$SIGNING_IDENTITY" "dist/Gorillas-$VERSION.dmg"
+          packaging/macos/notarize.sh "dist/Gorillas-$VERSION.dmg"
+          xcrun stapler staple "dist/Gorillas-$VERSION.dmg"
+
+      # What Gatekeeper will decide on a user's Mac, checked before
+      # anything is uploaded. spctl rejects any bare executable as "not an
+      # app", so the binary only gets codesign's check.
+      - name: Check what Gatekeeper will see
+        if: steps.signing.outputs.enabled == 'true'
+        run: |
+          dmg="dist/Gorillas-$VERSION.dmg"
+          codesign --verify --strict --verbose=2 dist/gorilla-rust
+          codesign --verify --strict --verbose=2 dist/Gorillas.app
+          codesign --verify --strict --verbose=2 "$dmg"
+          spctl --assess --type execute --verbose dist/Gorillas.app
+          spctl --assess --type open --context context:primary-signature --verbose "$dmg"
+          xcrun stapler validate dist/Gorillas.app
+          xcrun stapler validate "$dmg"
 
       - name: Package
         run: |
@@ -188,6 +238,8 @@ jobs:
           cp README.md LICENSE CHANGELOG.md "$staging/"
           tar czf "$staging.tar.gz" "$staging"
           shasum -a 256 "$staging.tar.gz" > "$staging.tar.gz.sha256"
+          cp "dist/Gorillas-$VERSION.dmg" .
+          shasum -a 256 "Gorillas-$VERSION.dmg" > "Gorillas-$VERSION.dmg.sha256"
 
       - name: Remove the signing material
         if: always()
@@ -198,13 +250,17 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: gorilla-rust-universal-apple-darwin
-          path: gorilla-rust-*.tar.gz*
+          path: |
+            gorilla-rust-*.tar.gz*
+            Gorillas-*.dmg*
           if-no-files-found: error
 
   release:
     name: Publish release
     needs: [build, macos]
-    if: startsWith(github.ref, 'refs/tags/')
+    # A manual run started from a tag in the Actions UI also has a tag
+    # ref, and must build without publishing.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
