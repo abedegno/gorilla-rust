@@ -6,6 +6,18 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- A macOS app, `Gorillas.app`, with the gorilla as its icon, in a disk
+  image on each release: open it and drag the app to Applications.
+
+### Changed
+
+- The macOS binary, app and disk image are signed with a Developer ID and
+  notarized by Apple, so Gatekeeper opens them without a warning. The app
+  and the disk image carry their notarization with them, so they open
+  offline too.
+
 ## [1.3.0] - 2026-09-23
 
 ### Fixed
