@@ -354,6 +354,8 @@ jobs:
           name: homebrew
           path: rendered
           if-no-files-found: error
+          # A re-run uploads it again, in the same run.
+          overwrite: true
 
       # In a scratch tap, so nothing reaches the real one unless it passes.
       # --online checks the download URLs, which exist only once the

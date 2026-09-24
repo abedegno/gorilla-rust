@@ -34,6 +34,13 @@ jobs.each do |name, job|
   end
 end
 
+# Re-running the homebrew job, which docs/releasing.md gives as the fix for
+# an expired token, uploads its artifact a second time in the same run.
+upload = jobs.fetch("homebrew").fetch("steps").find { |s| s["uses"].to_s.start_with?("actions/upload-artifact") }
+unless upload && upload.dig("with", "overwrite") == true
+  failures << "the homebrew job's artifact upload needs overwrite: true to survive a re-run"
+end
+
 if failures.empty?
   puts "workflows: ok"
 else
