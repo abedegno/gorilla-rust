@@ -3,11 +3,10 @@
 class GorillaRust < Formula
   desc "Pixel-faithful Rust port of the 1990 QBasic game Gorillas"
   homepage "https://github.com/abedegno/gorilla-rust"
-  license "MIT"
-
   # The universal macOS build, unless on_linux below picks a Linux one.
   url "https://github.com/abedegno/gorilla-rust/releases/download/v@VERSION@/gorilla-rust-universal-apple-darwin.tar.gz"
   sha256 "@SHA256_MACOS@"
+  license "MIT"
 
   on_linux do
     on_intel do
