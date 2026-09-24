@@ -295,3 +295,121 @@ jobs:
           body_path: release-notes.md
           files: artifacts/*
           generate_release_notes: true
+
+  # Fill in the formula and cask, audit them, and on a tag push, put them
+  # in the tap and install both from it. A manual run stops after the
+  # audit and pushes nothing. A pre-release tag (one with a hyphen) never
+  # reaches the tap.
+  homebrew:
+    name: Homebrew
+    needs: [build, macos, release]
+    if: >-
+      ${{ !cancelled()
+          && needs.build.result == 'success'
+          && needs.macos.result == 'success'
+          && (github.event_name == 'workflow_dispatch'
+              || (needs.release.result == 'success' && !contains(github.ref_name, '-'))) }}
+    runs-on: macos-latest
+    timeout-minutes: 30
+    env:
+      PUBLISH: ${{ github.event_name == 'push' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Fill in the formula and the cask
+        run: |
+          version="$(packaging/version.sh)"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          packaging/homebrew/render.sh "$version" artifacts rendered
+          cat rendered/Formula/gorilla-rust.rb rendered/Casks/gorillas.rb
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: homebrew
+          path: rendered
+          if-no-files-found: error
+
+      # In a scratch tap, so nothing reaches the real one unless it passes.
+      # --online checks the download URLs, which exist only once the
+      # release is published, so a manual run audits offline.
+      - name: Audit them
+        run: |
+          brew tap-new --no-git abedegno/scratch
+          tap="$(brew --repository abedegno/scratch)"
+          mkdir -p "$tap/Casks"
+          cp rendered/Formula/gorilla-rust.rb "$tap/Formula/"
+          cp rendered/Casks/gorillas.rb "$tap/Casks/"
+          flags="--strict"
+          if [ "$PUBLISH" = true ]; then flags="--strict --online"; fi
+          brew style abedegno/scratch
+          brew audit $flags --formula abedegno/scratch/gorilla-rust
+          brew audit $flags --cask abedegno/scratch/gorillas
+          brew untap abedegno/scratch
+
+      # Only commits when the files differ, so re-running this for a
+      # version the tap already has does nothing.
+      - name: Push to the tap
+        if: env.PUBLISH == 'true'
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: |
+          if [ -z "$TAP_TOKEN" ]; then
+            echo "::error::TAP_TOKEN is not set. See docs/releasing.md."
+            exit 1
+          fi
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/abedegno/homebrew-tap.git" tap
+          mkdir -p tap/Formula tap/Casks
+          cp rendered/Formula/gorilla-rust.rb tap/Formula/
+          cp rendered/Casks/gorillas.rb tap/Casks/
+          cd tap
+          git add Formula Casks
+          if git diff --cached --quiet; then
+            echo "The tap already has gorilla-rust $VERSION."
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "gorilla-rust $VERSION"
+          git push origin HEAD
+
+      # The same check the Pages workflow makes of the live site: install
+      # from the real tap, as a user would, with both packages on one Mac.
+      - name: Install from the tap
+        if: env.PUBLISH == 'true'
+        run: |
+          brew tap abedegno/tap
+          brew install abedegno/tap/gorilla-rust
+          brew test abedegno/tap/gorilla-rust
+          brew install --cask abedegno/tap/gorillas
+          test "$(command -v gorilla-rust)" = "$(brew --prefix)/bin/gorilla-rust"
+          test "$(gorilla-rust --version)" = "gorilla-rust $VERSION"
+          spctl --assess --type execute --verbose /Applications/Gorillas.app
+
+  # Install the formula on both Linux architectures from the live tap,
+  # which proves each Linux URL, checksum and architecture choice. ALSA
+  # comes from the system, as the formula's caveats say.
+  homebrew-linux:
+    name: Homebrew on Linux (${{ matrix.os }})
+    needs: homebrew
+    if: github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: Homebrew/actions/setup-homebrew@main
+
+      - name: Install from the tap
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2t64
+          brew install abedegno/tap/gorilla-rust
+          brew test abedegno/tap/gorilla-rust
