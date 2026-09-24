@@ -10,6 +10,7 @@
 
 pub mod banana;
 pub mod city;
+pub mod icon;
 pub mod intro;
 pub mod play;
 pub mod rng;

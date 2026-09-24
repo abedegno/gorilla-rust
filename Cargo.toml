@@ -57,6 +57,10 @@ web-sys = { version = "0.3", features = [
     "Window",
 ] }
 
+[dev-dependencies]
+# Only the icon example writes PNGs.
+png = "0.18"
+
 [profile.release]
 opt-level = 3
 lto = true
