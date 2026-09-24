@@ -5,10 +5,9 @@ class GorillaRust < Formula
   homepage "https://github.com/abedegno/gorilla-rust"
   license "MIT"
 
-  on_macos do
-    url "https://github.com/abedegno/gorilla-rust/releases/download/v@VERSION@/gorilla-rust-universal-apple-darwin.tar.gz"
-    sha256 "@SHA256_MACOS@"
-  end
+  # The universal macOS build, unless on_linux below picks a Linux one.
+  url "https://github.com/abedegno/gorilla-rust/releases/download/v@VERSION@/gorilla-rust-universal-apple-darwin.tar.gz"
+  sha256 "@SHA256_MACOS@"
 
   on_linux do
     on_intel do
