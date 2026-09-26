@@ -146,3 +146,43 @@ test('tunes are dropped, not piled up, while the context is suspended', async ({
   // The key asked once; each tune the game tried to play asked again.
   expect(await page.evaluate(() => window.__audio.resumes)).toBeGreaterThan(resumesBefore + 1);
 });
+
+// iOS mutes a page's Web Audio when the phone is in Silent mode, unless the
+// page says it plays media through navigator.audioSession (iOS 17 and
+// later). None of the test browsers has a silent switch, so a stand-in
+// session records what the page asks for.
+async function withAudioSession(page) {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'audioSession', {
+      value: { type: 'auto' },
+      configurable: true,
+    });
+  });
+}
+const sessionType = (page) => page.evaluate(() => navigator.audioSession.type);
+
+test('with sound on, the game plays through Silent mode', async ({ page }) => {
+  await withAudioSession(page);
+  await startGame(page, '?seed=1');
+  await expect.poll(() => sessionType(page)).toBe('playback');
+});
+
+test('muted, the game leaves other audio and Silent mode alone', async ({ page }) => {
+  await withAudioSession(page);
+  await startGame(page, '?seed=1&mute');
+  await expect.poll(() => sessionType(page)).toBe('ambient');
+});
+
+test('the mute button switches the audio session too', async ({ page }) => {
+  await withAudioSession(page);
+  await startGame(page, '?seed=1');
+  await expect.poll(() => sessionType(page)).toBe('playback');
+
+  await page.click('#mute');
+  await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
+  expect(await sessionType(page)).toBe('ambient');
+
+  await page.click('#mute');
+  await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'false');
+  expect(await sessionType(page)).toBe('playback');
+});

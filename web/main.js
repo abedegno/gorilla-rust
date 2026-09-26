@@ -24,6 +24,20 @@ function storeMute(muted) {
   }
 }
 
+/**
+ * Tell the browser what kind of sound the page makes. iOS treats a page's
+ * Web Audio as "ambient" by default, and mutes ambient sound when the phone
+ * is in Silent mode, so with sound on the game says it is "playback", as a
+ * video does. Muted, it goes back to "ambient", so a silent game never
+ * interrupts music another app is playing. Only Safari 17 and later have
+ * navigator.audioSession; everywhere else this does nothing.
+ */
+function setAudioSession(muted) {
+  if (navigator.audioSession) {
+    navigator.audioSession.type = muted ? 'ambient' : 'playback';
+  }
+}
+
 /** ?seed=N fixes the game, like --seed. Anything else gets a random seed. */
 function seedFromUrl(params) {
   const raw = params.get('seed');
@@ -50,6 +64,7 @@ async function main() {
   const showMute = () => {
     muteButton.setAttribute('aria-pressed', String(muted));
     muteButton.textContent = muted ? 'Sound off' : 'Sound on';
+    setAudioSession(muted);
   };
   showMute();
 

@@ -6,6 +6,12 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- The browser version is heard on an iPhone in Silent mode (iOS 17 and
+  later), the way a video is. Muted with its button, it goes back to
+  following the silent switch and leaves other apps' music playing.
+
 ## [1.4.0] - 2026-09-26
 
 ### Added
