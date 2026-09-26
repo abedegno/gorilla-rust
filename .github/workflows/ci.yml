@@ -82,6 +82,7 @@ jobs:
         run: |
           packaging/test-version.sh
           packaging/test-workflows.sh
+          packaging/homebrew/test-render.sh
 
   msrv:
     name: Minimum supported Rust version

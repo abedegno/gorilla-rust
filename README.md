@@ -62,20 +62,24 @@ it was caught:
 
 ## Install
 
-Download a binary for your platform from
-[Releases](https://github.com/abedegno/gorilla-rust/releases), or build it
-from source as below.
-
-**macOS:** the binary is not yet signed, so Gatekeeper blocks it the first
-time. After extracting it, clear the quarantine flag once:
+With [Homebrew](https://brew.sh), on macOS or Linux:
 
 ```sh
-xattr -d com.apple.quarantine gorilla-rust
+brew install abedegno/tap/gorilla-rust      # the gorilla-rust command
+brew install --cask abedegno/tap/gorillas   # macOS: Gorillas.app, in Applications
 ```
 
-**Linux:** there are builds for x86_64 and arm64. The binary needs ALSA to
-start, and X11 with Xcursor and xkbcommon to open its window. Most desktops
-already have all of them; if it reports a missing library:
+Or download from [Releases](https://github.com/abedegno/gorilla-rust/releases):
+
+- **macOS:** `Gorillas-<version>.dmg`. Open it and drag Gorillas to
+  Applications. The app and the command-line binary in the `.tar.gz` are
+  signed and notarized by Apple, so they open without a warning.
+- **Windows:** the `.zip`, for x86_64.
+- **Linux:** the `.tar.gz`, for x86_64 and arm64.
+
+**Linux:** the binary needs ALSA to start, and X11 with Xcursor and
+xkbcommon to open its window. Most desktops already have all of them; if
+it reports a missing library:
 
 ```sh
 sudo apt-get install libasound2t64 libx11-6 libxcursor1 libxkbcommon0   # Ubuntu 24.04+, Debian 13+
@@ -83,7 +87,7 @@ sudo apt-get install libasound2 libx11-6 libxcursor1 libxkbcommon0      # older 
 sudo dnf install alsa-lib libX11 libXcursor libxkbcommon                # Fedora
 ```
 
-Or install it with `cargo`, which builds locally and is not quarantined:
+Or install it with `cargo`, which builds it locally:
 
 ```sh
 cargo install --git https://github.com/abedegno/gorilla-rust
