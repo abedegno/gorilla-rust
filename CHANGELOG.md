@@ -6,6 +6,12 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- A pre-release tag, such as `v1.5.0-rc1`, is published as a pre-release,
+  so it no longer becomes the latest release that the README and the
+  Homebrew cask point at.
+
 ## [1.4.0] - 2026-09-26
 
 ### Added

@@ -16,6 +16,7 @@ file="$1"
 : "${APPLE_API_KEY_PATH:?}" "${APPLE_API_KEY_ID:?}" "${APPLE_API_ISSUER_ID:?}"
 
 result="$(mktemp)"
+trap 'rm -f "$result"' EXIT
 # notarytool can exit non-zero for a rejected submission. The verdict is
 # read from its JSON either way, so that a rejection prints Apple's log.
 xcrun notarytool submit "$file" \
@@ -32,4 +33,3 @@ if [ "$status" != "Accepted" ]; then
   echo "::error::Notarizing $(basename "$file") finished with status: $status."
   exit 1
 fi
-rm -f "$result"
