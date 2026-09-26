@@ -78,6 +78,11 @@ jobs:
       - name: Clippy
         run: cargo clippy --all-targets
 
+      - name: Packaging scripts
+        run: |
+          packaging/test-version.sh
+          packaging/test-workflows.sh
+
   msrv:
     name: Minimum supported Rust version
     runs-on: ubuntu-latest

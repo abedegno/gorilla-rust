@@ -145,11 +145,16 @@ fix. If a change cannot be tested, say so in the description and why.
 
 For the maintainer.
 
+The one-off setup (the Developer ID certificate, the notarization key
+and the Homebrew tap) and how to check a change to the release without
+publishing are in [docs/releasing.md](docs/releasing.md).
+
 1. Move the `[Unreleased]` changes in `CHANGELOG.md` under a new version
    heading, add its link at the bottom, and bump `version` in `Cargo.toml`.
 2. Commit, then tag and push: `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`.
-   The Release workflow builds every platform and publishes the GitHub
-   release, with that version's changelog section as the notes. A tag
+   The Release workflow builds every platform, signs and notarizes the
+   macOS binary, `Gorillas.app` and its disk image, and publishes the
+   GitHub release, with that version's changelog section as the notes. A tag
    whose version has no changelog section fails before anything is
    published. The same tag runs the Pages workflow, which tests the
    browser build and deploys it to GitHub Pages. The `github-pages`
