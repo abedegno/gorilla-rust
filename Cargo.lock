@@ -370,7 +370,7 @@ dependencies = [
 
 [[package]]
 name = "gorilla-rust"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "js-sys",
  "minifb",
