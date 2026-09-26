@@ -175,7 +175,7 @@ jobs:
           security list-keychains -d user -s "$keychain" \
             $(security list-keychains -d user | tr -d '"')
           identity="$(security find-identity -v -p codesigning "$keychain" \
-            | grep 'Developer ID Application' | head -1 | awk -F'"' '{print $2}')"
+            | grep 'Developer ID Application' | head -1 | awk -F'"' '{print $2}' || true)"
           if [ -z "$identity" ]; then
             echo "::error::No Developer ID Application identity in the certificate."
             exit 1
@@ -236,16 +236,19 @@ jobs:
 
       # What Gatekeeper will decide on a user's Mac, checked before
       # anything is uploaded. spctl rejects any bare executable as "not an
-      # app", so the binary only gets codesign's check.
+      # app", so the binary only gets codesign's check. spctl also says
+      # "accepted" when assessments are turned off, so its verdict must
+      # name the notarization.
       - name: Check what Gatekeeper will see
         if: steps.signing.outputs.enabled == 'true'
         run: |
+          set -o pipefail
           dmg="dist/Gorillas-$VERSION.dmg"
           codesign --verify --strict --verbose=2 dist/gorilla-rust
           codesign --verify --strict --verbose=2 dist/Gorillas.app
           codesign --verify --strict --verbose=2 "$dmg"
-          spctl --assess --type execute --verbose dist/Gorillas.app
-          spctl --assess --type open --context context:primary-signature --verbose "$dmg"
+          spctl --assess --type execute --verbose dist/Gorillas.app 2>&1 | tee /dev/stderr | grep 'source=Notarized Developer ID' >/dev/null
+          spctl --assess --type open --context context:primary-signature --verbose "$dmg" 2>&1 | tee /dev/stderr | grep 'source=Notarized Developer ID' >/dev/null
           xcrun stapler validate dist/Gorillas.app
           xcrun stapler validate "$dmg"
 
@@ -314,6 +317,9 @@ jobs:
           body_path: release-notes.md
           files: artifacts/*
           generate_release_notes: true
+          # A hyphenated tag stays out of the tap, so it must not become the
+          # latest release the README and the cask's livecheck point at.
+          prerelease: ${{ contains(github.ref_name, '-') }}
 
   # Fill in the formula and cask, audit them, and on a tag push, put them
   # in the tap and install both from it. A manual run stops after the
@@ -330,6 +336,11 @@ jobs:
               || (needs.release.result == 'success' && !contains(github.ref_name, '-'))) }}
     runs-on: macos-latest
     timeout-minutes: 30
+    # Two tags pushed close together would race to push to the tap, and
+    # the second push would be refused.
+    concurrency:
+      group: homebrew-tap
+      cancel-in-progress: false
     env:
       PUBLISH: ${{ github.event_name == 'push' }}
     steps:
@@ -386,6 +397,10 @@ jobs:
             exit 1
           fi
           git clone "https://x-access-token:${TAP_TOKEN}@github.com/abedegno/homebrew-tap.git" tap
+          if packaging/homebrew/tap-is-newer.sh "$VERSION" tap; then
+            echo "::notice::The tap already holds a release newer than $VERSION, so it is left alone."
+            exit 0
+          fi
           mkdir -p tap/Formula tap/Casks
           cp rendered/Formula/gorilla-rust.rb tap/Formula/
           cp rendered/Casks/gorillas.rb tap/Casks/
@@ -405,13 +420,14 @@ jobs:
       - name: Install from the tap
         if: env.PUBLISH == 'true'
         run: |
+          set -o pipefail
           brew tap abedegno/tap
           brew install abedegno/tap/gorilla-rust
           brew test abedegno/tap/gorilla-rust
           brew install --cask abedegno/tap/gorillas
           test "$(command -v gorilla-rust)" = "$(brew --prefix)/bin/gorilla-rust"
           test "$(gorilla-rust --version)" = "gorilla-rust $VERSION"
-          spctl --assess --type execute --verbose /Applications/Gorillas.app
+          spctl --assess --type execute --verbose /Applications/Gorillas.app 2>&1 | tee /dev/stderr | grep 'source=Notarized Developer ID' >/dev/null
 
   # Install the formula on both Linux architectures from the live tap,
   # which proves each Linux URL, checksum and architecture choice. ALSA
@@ -426,7 +442,8 @@ jobs:
         os: [ubuntu-latest, ubuntu-24.04-arm]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: Homebrew/actions/setup-homebrew@main
+      # Pinned to a commit: Homebrew publishes this action only on main.
+      - uses: Homebrew/actions/setup-homebrew@e99025eb970cfa124b8284a35463d87426917478 # main, 2026-09-25
 
       - name: Install from the tap
         run: |

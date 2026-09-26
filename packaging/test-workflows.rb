@@ -41,6 +41,63 @@ unless upload && upload.dig("with", "overwrite") == true
   failures << "the homebrew job's artifact upload needs overwrite: true to survive a re-run"
 end
 
+all_steps = jobs.flat_map { |name, job| (job["steps"] || []).map { |step| [name, step] } }
+
+# With assessments turned off, spctl says "accepted" with "override=security
+# disabled" and exits 0, which proves nothing. Only the source line shows
+# that Gatekeeper saw a notarization.
+# The default run shell has no pipefail, so without it the grep alone would
+# decide, and a rejection that still names a source would pass. grep reads
+# to the end rather than quitting with -q, so tee is never cut off.
+all_steps.each do |name, step|
+  run = step["run"].to_s
+  next unless run.include?("spctl --assess")
+  failures << "#{name}: '#{step['name']}' runs spctl without set -o pipefail" unless run.include?("set -o pipefail")
+  run.each_line do |line|
+    next unless line.include?("spctl --assess")
+    next if line.include?("| grep 'source=Notarized Developer ID' >/dev/null")
+    failures << "#{name}: spctl's verdict is not checked for the notarization in: #{line.strip}"
+  end
+end
+
+# Under pipefail, a grep that finds no identity fails the assignment and the
+# step dies before it can say why.
+import = all_steps.map(&:last).find { |s| s["run"].to_s.include?("security find-identity") }
+unless import && import["run"].match?(/find-identity.*?\|\| true\)"/m)
+  failures << "the identity lookup must tolerate no match so its error message can print"
+end
+
+# A re-run of an old release's homebrew job must not put the tap back.
+push = jobs.fetch("homebrew").fetch("steps").find { |s| s["name"] == "Push to the tap" }
+unless push && push["run"].to_s.include?("packaging/homebrew/tap-is-newer.sh")
+  failures << "Push to the tap must skip a tap that already holds a newer release"
+end
+
+# Two tags pushed close together must take turns at the tap.
+concurrency = jobs.fetch("homebrew")["concurrency"]
+unless concurrency.is_a?(Hash) && concurrency["group"] == "homebrew-tap" && concurrency["cancel-in-progress"] == false
+  failures << "the homebrew job needs concurrency group homebrew-tap without cancel-in-progress"
+end
+
+# A pre-release tag stays out of the tap, so it must not become GitHub's
+# latest release either, which the README and the cask's livecheck follow.
+publish = jobs.fetch("release").fetch("steps").find { |s| s["uses"].to_s.start_with?("softprops/action-gh-release") }
+unless publish && publish.dig("with", "prerelease") == "${{ contains(github.ref_name, '-') }}"
+  failures << "the release must be marked a pre-release when its tag has a hyphen"
+end
+
+# A moving branch ref runs whatever is pushed there next, with this
+# workflow's permissions.
+all_steps.each do |name, step|
+  uses = step["uses"].to_s
+  failures << "#{name}: #{uses} follows a branch" if uses.match?(/@(main|master)\z/)
+end
+
+# notarize.sh keeps Apple's verdict in a temporary file, which must go
+# whether the submission is accepted or not.
+notarize = File.read(File.join(__dir__, "macos", "notarize.sh"))
+failures << "notarize.sh must remove its temporary file on every exit" unless notarize.match?(/^trap 'rm -f "\$result"' EXIT$/)
+
 if failures.empty?
   puts "workflows: ok"
 else
