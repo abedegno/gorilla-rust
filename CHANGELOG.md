@@ -6,6 +6,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-09-26
+
 ### Added
 
 - The browser version shows which version it is running, below the game.
@@ -102,7 +104,8 @@ First release. The game is complete and playable end to end.
 - Command line flags for the seed, speed, window scale and muting.
 - Tooling under `reference/` for capturing and comparing framebuffers.
 
-[Unreleased]: https://github.com/abedegno/gorilla-rust/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/abedegno/gorilla-rust/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.4.1
 [1.4.0]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.4.0
 [1.3.0]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.3.0
 [1.2.0]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.2.0
