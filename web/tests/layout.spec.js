@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import { startGame } from './helpers.js';
 
@@ -72,3 +73,13 @@ for (const phone of phones) {
     });
   });
 }
+
+test('the page shows the version of the build it runs', async ({ page }) => {
+  // Read from Cargo.toml, the version the wasm build is compiled with, so
+  // the page is checked against what it should say rather than a copy.
+  const cargo = readFileSync(new URL('../../Cargo.toml', import.meta.url), 'utf8');
+  const version = cargo.match(/^version = "(.+)"$/m)[1];
+  await page.goto('index.html?seed=1');
+  await expect(page.locator('#version')).toHaveText(`gorilla-rust ${version}`);
+  await expect(page.locator('#version')).toBeVisible();
+});
