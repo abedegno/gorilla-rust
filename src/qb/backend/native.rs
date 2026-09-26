@@ -3,8 +3,9 @@
 use crate::qb::screen::Screen;
 use crate::qb::sound::Note;
 use minifb::{Key, Window, WindowOptions};
-use rodio::Source;
+use rodio::{ChannelCount, SampleRate, Source};
 use std::collections::VecDeque;
+use std::num::NonZero;
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
@@ -81,10 +82,14 @@ impl Display {
     }
 }
 
+/// The speaker is one channel, and every tone is made at this rate.
+const MONO: ChannelCount = NonZero::new(1).unwrap();
+const RATE: SampleRate = NonZero::new(44_100).unwrap();
+
 /// Plays notes as square waves, which is what the PC speaker produced.
 pub struct Audio {
     mute: bool,
-    stream: Option<rodio::OutputStream>,
+    stream: Option<rodio::MixerDeviceSink>,
 }
 
 impl Audio {
@@ -95,11 +100,16 @@ impl Audio {
                 stream: None,
             };
         }
-        match rodio::OutputStreamBuilder::open_default_stream() {
-            Ok(stream) => Audio {
-                mute: false,
-                stream: Some(stream),
-            },
+        match rodio::DeviceSinkBuilder::open_default_sink() {
+            Ok(mut stream) => {
+                // Otherwise rodio prints a warning to the terminal every
+                // time the game quits and this is dropped.
+                stream.log_on_drop(false);
+                Audio {
+                    mute: false,
+                    stream: Some(stream),
+                }
+            }
             Err(e) => {
                 eprintln!("no audio device ({e}), continuing in silence");
                 Audio {
@@ -122,11 +132,11 @@ impl Audio {
             return None;
         }
         let stream = self.stream.as_ref()?;
-        let sink = rodio::Sink::connect_new(stream.mixer());
+        let sink = rodio::Player::connect_new(stream.mixer());
         for n in notes {
             let dur = Duration::from_secs_f64(n.ms / 1000.0);
             if n.freq <= 0.0 {
-                sink.append(rodio::source::Zero::new(1, 44_100).take_duration(dur));
+                sink.append(rodio::source::Zero::new(MONO, RATE).take_duration(dur));
             } else {
                 sink.append(SquareWave::new(n.freq).take_duration(dur));
             }
@@ -215,7 +225,7 @@ impl SquareWave {
 impl Iterator for SquareWave {
     type Item = f32;
     fn next(&mut self) -> Option<f32> {
-        let period = 44_100.0 / self.freq;
+        let period = RATE.get() as f32 / self.freq;
         let phase = (self.sample as f32 % period) / period;
         self.sample = self.sample.wrapping_add(1);
         Some(if phase < 0.5 { 0.20 } else { -0.20 })
@@ -226,11 +236,11 @@ impl Source for SquareWave {
     fn current_span_len(&self) -> Option<usize> {
         None
     }
-    fn channels(&self) -> u16 {
-        1
+    fn channels(&self) -> ChannelCount {
+        MONO
     }
-    fn sample_rate(&self) -> u32 {
-        44_100
+    fn sample_rate(&self) -> SampleRate {
+        RATE
     }
     fn total_duration(&self) -> Option<Duration> {
         None
