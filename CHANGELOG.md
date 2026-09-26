@@ -6,6 +6,10 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- The browser version shows which version it is running, below the game.
+
 ### Fixed
 
 - The browser version is heard on an iPhone in Silent mode (iOS 17 and

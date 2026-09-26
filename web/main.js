@@ -80,7 +80,11 @@ async function main() {
     showError(`This browser could not load the game: ${e}`);
     return;
   }
-  const { start, push_key, set_muted, resume_audio } = wasm;
+  const { start, push_key, set_muted, resume_audio, version } = wasm;
+
+  // From the wasm build itself, so the page names the build it is running.
+  document.getElementById('version').textContent = `gorilla-rust ${version()}`;
+  document.querySelector('footer .version').hidden = false;
 
   // The overlay stays disabled, reading "Loading…", until now, so a tap
   // made before the game could start is not silently lost.
