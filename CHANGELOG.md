@@ -15,6 +15,9 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The browser version is heard on an iPhone in Silent mode (iOS 17 and
   later), the way a video is. Muted with its button, it goes back to
   following the silent switch and leaves other apps' music playing.
+- A pre-release tag, such as `v1.5.0-rc1`, is published as a pre-release,
+  so it no longer becomes the latest release that the README and the
+  Homebrew cask point at.
 
 ## [1.4.0] - 2026-09-26
 

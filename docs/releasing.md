@@ -123,4 +123,6 @@ from the tap to check them.
   failed job from the run's page. Re-running is safe; see below.
 
 Re-running the `homebrew` job for a version the tap already has changes
-nothing: it only commits when the files differ.
+nothing: it only commits when the files differ. Re-running an older
+release's job changes nothing either, since the job leaves a tap that
+already holds a newer release alone.
