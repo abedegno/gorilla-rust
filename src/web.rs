@@ -48,6 +48,13 @@ pub fn set_muted(muted: bool) {
     backend::set_muted(muted);
 }
 
+/// This build's version, the one `gorilla-rust --version` prints, so the
+/// page can say which build it is running.
+#[wasm_bindgen]
+pub fn version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
 /// Resume sound the browser has suspended. The page calls this from its key
 /// and pointer handlers, because some browsers only allow it in a gesture.
 #[wasm_bindgen]
