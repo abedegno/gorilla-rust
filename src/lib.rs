@@ -26,6 +26,8 @@
 //! measured against the original, and why the code is the way it is.
 
 pub mod game;
+#[cfg(target_os = "ios")]
+pub mod ios;
 pub mod qb;
 #[cfg(target_arch = "wasm32")]
 pub mod web;

@@ -66,7 +66,7 @@ impl Qb {
         Qb::new(width, height, None, backend::Audio::new(true))
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(not(target_arch = "wasm32"), not(target_os = "ios")))]
     pub fn windowed(width: i32, height: i32, scale: usize) -> Qb {
         Qb::new(
             width,

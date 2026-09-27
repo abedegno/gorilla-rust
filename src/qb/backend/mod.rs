@@ -5,12 +5,17 @@
 #[cfg(not(target_arch = "wasm32"))]
 mod clock;
 #[cfg(not(target_arch = "wasm32"))]
-mod speaker;
+pub mod speaker;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), not(target_os = "ios")))]
 mod native;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), not(target_os = "ios")))]
 pub use native::*;
+
+#[cfg(target_os = "ios")]
+mod ios;
+#[cfg(target_os = "ios")]
+pub use ios::*;
 
 #[cfg(target_arch = "wasm32")]
 mod web;
