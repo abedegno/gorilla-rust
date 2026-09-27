@@ -8,7 +8,7 @@ and how to check a change to the release without publishing anything.
 
 ## One-off setup
 
-Seven repository secrets drive the release. Set each with
+Ten repository secrets drive the release. Set each with
 `gh secret set NAME -R abedegno/gorilla-rust`, which reads the value from
 standard input, so that it never lands in your shell history.
 
@@ -93,6 +93,38 @@ The `crates-io` job builds the packaged crate without the token, and
 hands the token only to `cargo publish --no-verify`, so no dependency's
 build script can read it.
 
+### The App Store
+
+The iOS app, Gorilla Rust, is uploaded to App Store Connect by the
+`app-store` job. It needs its own certificate and profile; Developer ID
+only covers apps outside the store.
+
+1. At <https://developer.apple.com/account/resources/certificates/add>,
+   create an **Apple Distribution** certificate (from a certificate
+   signing request, as for the Developer ID one), export it with its key
+   as a `.p12`, and set `IOS_DISTRIBUTION_P12` (base64) and
+   `IOS_DISTRIBUTION_PASSWORD`.
+2. At <https://developer.apple.com/account/resources/identifiers/list>,
+   make sure the App ID `uk.org.jonwilliams.gorilla-rust` exists for iOS.
+3. At <https://developer.apple.com/account/resources/profiles/add>,
+   create an **App Store Connect** distribution profile for that App ID
+   and certificate, download it, and set `IOS_PROVISIONING_PROFILE` to its
+   base64: `base64 -i GorillaRust.mobileprovision | gh secret set IOS_PROVISIONING_PROFILE -R abedegno/gorilla-rust`.
+4. In App Store Connect, create the app: name **Gorilla Rust**, bundle ID
+   `uk.org.jonwilliams.gorilla-rust`, SKU `gorilla-rust`. Set the privacy
+   label to **Data Not Collected**, the privacy policy URL to
+   <https://abedegno.github.io/gorilla-rust/privacy.html>, the support URL
+   to <https://github.com/abedegno/gorilla-rust/issues>, and complete the
+   age rating (mild cartoon violence).
+5. Take the screenshots with `ios/screenshots.sh` and upload them from
+   `ios/build/screenshots`.
+
+The upload reuses the App Store Connect API key; its role must allow
+uploading builds.
+
+After a tag's run, the build appears in TestFlight within about half an
+hour. Submitting it for review is done by hand in App Store Connect.
+
 ### The tap's README
 
     # abedegno/homebrew-tap
@@ -138,6 +170,10 @@ crate.
   to the tap". Make a new token and replace `TAP_TOKEN`, then re-run the
   failed job from the run's page. Re-running is safe; see below.
 
+- **The Apple Distribution certificate** (after a year) or **the
+  profile** (with it): the `app-store` job fails at "Import the
+  certificate and the profile" or at "Archive". Renew both and replace
+  the three iOS secrets.
 - **The crates.io token** (after its expiry, if it has one): the
   `crates-io` job fails at "Publish". Make a new token and replace
   `CARGO_REGISTRY_TOKEN`, then re-run the failed job.
