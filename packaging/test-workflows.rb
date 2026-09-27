@@ -30,7 +30,8 @@ failures << "the macos job gives every step #{leaked.join(', ')}" unless leaked.
 jobs.each do |name, job|
   (job["steps"] || []).each do |step|
     builds = step["run"].to_s.each_line.any? do |line|
-      line.include?("cargo ") && !line.strip.match?(/\Acargo publish --no-verify\b/)
+      (line.include?("cargo ") || line.include?("build-rust.sh")) &&
+        !line.strip.match?(/\Acargo publish --no-verify\b/)
     end
     next unless builds
     names = secret.call(step["env"])
@@ -130,6 +131,18 @@ else
   failures << "crates-io must not give the token to every step" if (crates["env"] || {}).values.any? { |v| v.to_s.include?("secrets.") }
   run = crates.fetch("steps").map { |s| s["run"].to_s }.join("\n")
   failures << "crates-io must skip a version crates.io already has" unless run.include?("packaging/crate-published.sh")
+end
+
+# The App Store job signs and uploads only for a real release, and its
+# signing secrets never reach a step that builds.
+store = jobs["app-store"]
+if store.nil?
+  failures << "there is no app-store job"
+else
+  failures << "app-store must run after the release job" unless Array(store["needs"]).include?("release")
+  failures << "app-store must skip pre-release tags" unless store["if"].to_s.include?("!contains(github.ref_name, '-')")
+  upload = store.fetch("steps").find { |s| s["name"] == "Upload to App Store Connect" }
+  failures << "app-store must upload only on a tag push" unless upload && upload["if"].to_s.include?("github.event_name == 'push'")
 end
 
 if failures.empty?

@@ -169,7 +169,9 @@ jobs:
 
   ios:
     name: iOS build
-    runs-on: macos-15
+    # The same image the App Store upload builds on, so CI tests with the
+    # SDK the app ships with.
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
 
