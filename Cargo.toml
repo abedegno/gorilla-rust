@@ -12,8 +12,10 @@ keywords = ["game", "qbasic", "gorillas", "retro", "dos"]
 categories = ["games"]
 # An allowlist: the crate is the game and what it needs to build. The
 # tests are left out because they compare against the captures in
-# fixtures/, which are part of the repository, not the crate.
-include = ["src/**", "assets/**", "README.md", "LICENSE", "CHANGELOG.md", "docs/screenshot.png"]
+# fixtures/, which are part of the repository, not the crate. Each pattern
+# starts with "/": without it Cargo matches at any depth, and "README.md"
+# would also take every README under web/node_modules.
+include = ["/src/**", "/assets/**", "/README.md", "/LICENSE", "/CHANGELOG.md", "/docs/screenshot.png"]
 
 [lib]
 name = "gorillas"
