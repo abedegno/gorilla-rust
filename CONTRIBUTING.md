@@ -145,8 +145,8 @@ fix. If a change cannot be tested, say so in the description and why.
 
 For the maintainer.
 
-The one-off setup (the Developer ID certificate, the notarization key
-and the Homebrew tap) and how to check a change to the release without
+The one-off setup (the Developer ID certificate, the notarization key,
+the Homebrew tap and the crates.io token) and how to check a change to the release without
 publishing are in [docs/releasing.md](docs/releasing.md).
 
 1. Move the `[Unreleased]` changes in `CHANGELOG.md` under a new version
@@ -161,9 +161,10 @@ publishing are in [docs/releasing.md](docs/releasing.md).
    environment only allows the default branch until told otherwise, so
    its deployment rules (Settings, Environments) must also allow tags
    matching `v*`, or the deploy is refused.
-3. Publish the crate: `cargo publish`. It cannot be undone, only yanked.
+   The same tag also publishes the crate to crates.io, after the GitHub
+   release. A published version cannot be undone, only yanked.
 
-After `cargo publish` (or `cargo publish --dry-run`), run `cargo clean -p
+After `cargo package` or `cargo publish --dry-run`, run `cargo clean -p
 gorilla-rust` before testing again. Cargo verifies the package by building
 it in `target/package/`, and a later `cargo test` can reuse that build, in
 which the fixtures' path points into the package, where there are none.

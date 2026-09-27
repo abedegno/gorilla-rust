@@ -87,10 +87,12 @@ sudo apt-get install libasound2 libx11-6 libxcursor1 libxkbcommon0      # older 
 sudo dnf install alsa-lib libX11 libXcursor libxkbcommon                # Fedora
 ```
 
-Or install it with `cargo`, which builds it locally:
+Or install it from [crates.io](https://crates.io/crates/gorilla-rust) with
+`cargo`, which builds it locally (on Linux it needs the development
+headers listed under Building from source):
 
 ```sh
-cargo install --git https://github.com/abedegno/gorilla-rust
+cargo install gorilla-rust
 ```
 
 ### Building from source

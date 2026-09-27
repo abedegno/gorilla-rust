@@ -451,3 +451,62 @@ jobs:
           sudo apt-get install -y libasound2t64
           brew install abedegno/tap/gorilla-rust
           brew test abedegno/tap/gorilla-rust
+
+  # Publish the crate, so that `cargo install gorilla-rust` gets this
+  # release. crates.io keeps every version for good, so this runs only for
+  # a real release: after the GitHub release it matches, from the tag
+  # itself, and never for a pre-release.
+  crates-io:
+    name: Publish to crates.io
+    needs: release
+    if: github.event_name == 'push' && !contains(github.ref_name, '-')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # For the build of the packaged crate below.
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxkbcommon-dev libasound2-dev
+
+      - name: Read the version
+        run: |
+          version="$(packaging/version.sh)"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      # crates.io refuses a version twice, so a re-run of a release it
+      # already has stops here rather than failing.
+      - name: Check crates.io
+        id: published
+        run: |
+          status=0
+          packaging/crate-published.sh gorilla-rust "$VERSION" || status=$?
+          case "$status" in
+            0)
+              echo "::notice::crates.io already has gorilla-rust $VERSION."
+              echo "done=true" >> "$GITHUB_OUTPUT"
+              ;;
+            1) echo "done=false" >> "$GITHUB_OUTPUT" ;;
+            *) exit 1 ;;
+          esac
+
+      # cargo publish would build the crate before uploading it, running
+      # every dependency's build script with the token in reach. So the
+      # build happens here, without it, and the upload skips its own.
+      - name: Build the packaged crate
+        if: steps.published.outputs.done == 'false'
+        run: cargo package --locked
+
+      - name: Publish
+        if: steps.published.outputs.done == 'false'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          if [ -z "$CARGO_REGISTRY_TOKEN" ]; then
+            echo "::error::CARGO_REGISTRY_TOKEN is not set. See docs/releasing.md."
+            exit 1
+          fi
+          cargo publish --no-verify --locked

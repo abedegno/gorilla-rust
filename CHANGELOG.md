@@ -6,6 +6,15 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- gorilla-rust is on crates.io: `cargo install gorilla-rust`. Each
+  release publishes it.
+
+### Changed
+
+- The native build plays its sound through rodio 0.22.
+
 ## [1.4.1] - 2026-09-26
 
 ### Added
