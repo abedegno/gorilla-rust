@@ -9,15 +9,20 @@
 /* Begin PBXBuildFile section */
 		1F318C34A8F47FB851F18736 /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2396D11626D15E578F0AF05F /* GameView.swift */; };
 		540391CBB38996B4F424E0F4 /* FrameDigestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABAD845C2692089C3CFB61DE /* FrameDigestTests.swift */; };
+		5AAAFFC609CB865F782D3A15 /* Keypad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76E37A6B6E83BF77A2522953 /* Keypad.swift */; };
+		5B95A7D3EE0CE33FACFA7F8E /* Keys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 186EBE58E9054E70E2023575 /* Keys.swift */; };
 		6B2DA3EDDA1FE61C90184B02 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D16B4C4007A757B26BDC5AF1 /* Assets.xcassets */; };
 		6C409B288D389326439E8D8B /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 70EDDF92E61A435B84138126 /* AudioToolbox.framework */; };
+		79E550821D8FA0D25EF17825 /* PlayUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452F19852F25FB518041081B /* PlayUITests.swift */; };
 		97846019D89BE535E1993B7D /* Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BE8A4F75ED51D21C8B44D90 /* Core.swift */; };
 		9AF083EDD7E70E6645E18C31 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0813AD72A1CD0C2E8D43AC2 /* CoreAudio.framework */; };
 		A69B0EC4394AE0187502926B /* CoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C6DACC97BEA4B50EAA4DCA /* CoreTests.swift */; };
 		B80005E8B189A559B622A83B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756446BA2312D17136FB4557 /* ContentView.swift */; };
 		D07A966531927B6CF5943AFB /* AVFAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 724F8E44198E4EFE0DD027AC /* AVFAudio.framework */; };
+		D9C5D8DB532C478CE3F02303 /* HardwareKeysTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC830C5ED7D32292566E74FC /* HardwareKeysTests.swift */; };
 		EB050678ACEEFC0B02558BF9 /* GorillaRust.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = BEDF2909EE2EB6B6544DB4B6 /* GorillaRust.xcframework */; };
 		EB3D7C07F2BD456D3235E68C /* FrameDigest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB628DD8294E495C711220A /* FrameDigest.swift */; };
+		EDE1984FA864ADC75C3E3488 /* KeysTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD9DBDDD6A55CC0005F5392C /* KeysTests.swift */; };
 		EF7D5E21A0AB810E0A5CB70B /* GorillaRustApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9DDBA159164CF60F1FF1CE0 /* GorillaRustApp.swift */; };
 		FF82BB9EAB46835BCD2927C4 /* LaunchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21D35D22E0D8866EFE4FBD73 /* LaunchUITests.swift */; };
 /* End PBXBuildFile section */
@@ -40,17 +45,21 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		186EBE58E9054E70E2023575 /* Keys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keys.swift; sourceTree = "<group>"; };
 		21D35D22E0D8866EFE4FBD73 /* LaunchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchUITests.swift; sourceTree = "<group>"; };
 		2396D11626D15E578F0AF05F /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
 		31C6DACC97BEA4B50EAA4DCA /* CoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTests.swift; sourceTree = "<group>"; };
+		452F19852F25FB518041081B /* PlayUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayUITests.swift; sourceTree = "<group>"; };
 		4A87193D3F338BFF4DAA7B34 /* GorillaRust.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GorillaRust.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D09425B9E753B870012441F /* Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
 		5BE8A4F75ED51D21C8B44D90 /* Core.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core.swift; sourceTree = "<group>"; };
 		70EDDF92E61A435B84138126 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		724F8E44198E4EFE0DD027AC /* AVFAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFAudio.framework; path = System/Library/Frameworks/AVFAudio.framework; sourceTree = SDKROOT; };
 		756446BA2312D17136FB4557 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		76E37A6B6E83BF77A2522953 /* Keypad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keypad.swift; sourceTree = "<group>"; };
 		7AB628DD8294E495C711220A /* FrameDigest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameDigest.swift; sourceTree = "<group>"; };
 		ABAD845C2692089C3CFB61DE /* FrameDigestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameDigestTests.swift; sourceTree = "<group>"; };
+		AD9DBDDD6A55CC0005F5392C /* KeysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysTests.swift; sourceTree = "<group>"; };
 		B802672B7E196200081BC7D7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		BEDF2909EE2EB6B6544DB4B6 /* GorillaRust.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = GorillaRust.xcframework; sourceTree = "<group>"; };
 		C9DDBA159164CF60F1FF1CE0 /* GorillaRustApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GorillaRustApp.swift; sourceTree = "<group>"; };
@@ -58,6 +67,7 @@
 		D16B4C4007A757B26BDC5AF1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D51BA5F180CB9629FB9F544F /* GorillaRustUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GorillaRustUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EBF9CF55E5662C264B559D16 /* GorillaRustTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GorillaRustTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FC830C5ED7D32292566E74FC /* HardwareKeysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareKeysTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,6 +101,8 @@
 			children = (
 				31C6DACC97BEA4B50EAA4DCA /* CoreTests.swift */,
 				ABAD845C2692089C3CFB61DE /* FrameDigestTests.swift */,
+				FC830C5ED7D32292566E74FC /* HardwareKeysTests.swift */,
+				AD9DBDDD6A55CC0005F5392C /* KeysTests.swift */,
 			);
 			path = GorillaRustTests;
 			sourceTree = "<group>";
@@ -127,6 +139,8 @@
 				2396D11626D15E578F0AF05F /* GameView.swift */,
 				C9DDBA159164CF60F1FF1CE0 /* GorillaRustApp.swift */,
 				B802672B7E196200081BC7D7 /* Info.plist */,
+				76E37A6B6E83BF77A2522953 /* Keypad.swift */,
+				186EBE58E9054E70E2023575 /* Keys.swift */,
 			);
 			path = GorillaRust;
 			sourceTree = "<group>";
@@ -135,6 +149,7 @@
 			isa = PBXGroup;
 			children = (
 				21D35D22E0D8866EFE4FBD73 /* LaunchUITests.swift */,
+				452F19852F25FB518041081B /* PlayUITests.swift */,
 			);
 			path = GorillaRustUITests;
 			sourceTree = "<group>";
@@ -257,6 +272,8 @@
 			files = (
 				A69B0EC4394AE0187502926B /* CoreTests.swift in Sources */,
 				540391CBB38996B4F424E0F4 /* FrameDigestTests.swift in Sources */,
+				D9C5D8DB532C478CE3F02303 /* HardwareKeysTests.swift in Sources */,
+				EDE1984FA864ADC75C3E3488 /* KeysTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -265,6 +282,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FF82BB9EAB46835BCD2927C4 /* LaunchUITests.swift in Sources */,
+				79E550821D8FA0D25EF17825 /* PlayUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -277,6 +295,8 @@
 				EB3D7C07F2BD456D3235E68C /* FrameDigest.swift in Sources */,
 				1F318C34A8F47FB851F18736 /* GameView.swift in Sources */,
 				EF7D5E21A0AB810E0A5CB70B /* GorillaRustApp.swift in Sources */,
+				5AAAFFC609CB865F782D3A15 /* Keypad.swift in Sources */,
+				5B95A7D3EE0CE33FACFA7F8E /* Keys.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
