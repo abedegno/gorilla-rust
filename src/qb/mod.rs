@@ -12,6 +12,8 @@
 pub mod backend;
 pub mod fixture;
 pub mod font;
+#[cfg(any(test, target_os = "ios"))]
+pub mod hosted;
 pub mod input;
 pub mod screen;
 pub mod sound;
