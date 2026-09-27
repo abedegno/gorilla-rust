@@ -15,3 +15,9 @@ pub const SLICE_MS: f64 = 2.0;
 pub async fn sleep_ms(ms: f64) {
     crate::qb::hosted::Until::new(now_ms() + ms.max(0.0), now_ms).await;
 }
+
+/// Where the next wait starts: from the last deadline if that was missed
+/// by no more than a few frames, since the host only steps once a frame.
+pub fn wait_origin(now: f64, last_deadline: f64) -> f64 {
+    crate::qb::hosted::paced_origin(now, last_deadline)
+}

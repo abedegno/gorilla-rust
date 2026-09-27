@@ -58,14 +58,15 @@ impl Audio {
         if mute {
             return Audio { mute: true };
         }
-        let opened = OUTPUT.with(|o| {
+        // Whether it opened is not recorded here: `play` looks for the
+        // output each time, so a later `reopen` can bring sound back.
+        OUTPUT.with(|o| {
             let mut o = o.borrow_mut();
             if o.is_none() {
                 *o = open();
             }
-            o.is_some()
         });
-        Audio { mute: !opened }
+        Audio { mute: false }
     }
 
     /// Start playing `notes` and return at once.
