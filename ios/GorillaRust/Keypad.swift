@@ -16,6 +16,10 @@ struct Keypad: View {
                         Button { press(key) } label: {
                             Text(key.label)
                                 .font(.system(size: 20, weight: .semibold, design: .rounded))
+                                // "ABC" wrapped onto two lines in a narrow
+                                // landscape column; shrink it to fit instead.
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.6)
                                 .frame(maxWidth: .infinity, minHeight: 44)
                         }
                         .buttonStyle(.bordered)
