@@ -3,6 +3,11 @@
 //! canvas and Web Audio. Everything above this module is platform-free.
 
 #[cfg(not(target_arch = "wasm32"))]
+mod clock;
+#[cfg(not(target_arch = "wasm32"))]
+mod speaker;
+
+#[cfg(not(target_arch = "wasm32"))]
 mod native;
 #[cfg(not(target_arch = "wasm32"))]
 pub use native::*;
