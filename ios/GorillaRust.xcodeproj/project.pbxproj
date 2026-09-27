@@ -14,6 +14,7 @@
 		6B2DA3EDDA1FE61C90184B02 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D16B4C4007A757B26BDC5AF1 /* Assets.xcassets */; };
 		6C409B288D389326439E8D8B /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 70EDDF92E61A435B84138126 /* AudioToolbox.framework */; };
 		79E550821D8FA0D25EF17825 /* PlayUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452F19852F25FB518041081B /* PlayUITests.swift */; };
+		8B715B21CBB251C8B99A82AF /* Sound.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1C1BE5C79C60764DA7EB8E /* Sound.swift */; };
 		97846019D89BE535E1993B7D /* Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BE8A4F75ED51D21C8B44D90 /* Core.swift */; };
 		9AF083EDD7E70E6645E18C31 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0813AD72A1CD0C2E8D43AC2 /* CoreAudio.framework */; };
 		A69B0EC4394AE0187502926B /* CoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C6DACC97BEA4B50EAA4DCA /* CoreTests.swift */; };
@@ -24,6 +25,7 @@
 		EB3D7C07F2BD456D3235E68C /* FrameDigest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB628DD8294E495C711220A /* FrameDigest.swift */; };
 		EDE1984FA864ADC75C3E3488 /* KeysTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD9DBDDD6A55CC0005F5392C /* KeysTests.swift */; };
 		EF7D5E21A0AB810E0A5CB70B /* GorillaRustApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9DDBA159164CF60F1FF1CE0 /* GorillaRustApp.swift */; };
+		F270FAF2155BE1FF9730B5D6 /* SoundTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20E6F03024D8E88525F2361D /* SoundTests.swift */; };
 		FF82BB9EAB46835BCD2927C4 /* LaunchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21D35D22E0D8866EFE4FBD73 /* LaunchUITests.swift */; };
 /* End PBXBuildFile section */
 
@@ -46,6 +48,7 @@
 
 /* Begin PBXFileReference section */
 		186EBE58E9054E70E2023575 /* Keys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keys.swift; sourceTree = "<group>"; };
+		20E6F03024D8E88525F2361D /* SoundTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundTests.swift; sourceTree = "<group>"; };
 		21D35D22E0D8866EFE4FBD73 /* LaunchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchUITests.swift; sourceTree = "<group>"; };
 		2396D11626D15E578F0AF05F /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
 		31C6DACC97BEA4B50EAA4DCA /* CoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTests.swift; sourceTree = "<group>"; };
@@ -67,6 +70,7 @@
 		D16B4C4007A757B26BDC5AF1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D51BA5F180CB9629FB9F544F /* GorillaRustUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GorillaRustUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EBF9CF55E5662C264B559D16 /* GorillaRustTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GorillaRustTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB1C1BE5C79C60764DA7EB8E /* Sound.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sound.swift; sourceTree = "<group>"; };
 		FC830C5ED7D32292566E74FC /* HardwareKeysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareKeysTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -103,6 +107,7 @@
 				ABAD845C2692089C3CFB61DE /* FrameDigestTests.swift */,
 				FC830C5ED7D32292566E74FC /* HardwareKeysTests.swift */,
 				AD9DBDDD6A55CC0005F5392C /* KeysTests.swift */,
+				20E6F03024D8E88525F2361D /* SoundTests.swift */,
 			);
 			path = GorillaRustTests;
 			sourceTree = "<group>";
@@ -141,6 +146,7 @@
 				B802672B7E196200081BC7D7 /* Info.plist */,
 				76E37A6B6E83BF77A2522953 /* Keypad.swift */,
 				186EBE58E9054E70E2023575 /* Keys.swift */,
+				FB1C1BE5C79C60764DA7EB8E /* Sound.swift */,
 			);
 			path = GorillaRust;
 			sourceTree = "<group>";
@@ -274,6 +280,7 @@
 				540391CBB38996B4F424E0F4 /* FrameDigestTests.swift in Sources */,
 				D9C5D8DB532C478CE3F02303 /* HardwareKeysTests.swift in Sources */,
 				EDE1984FA864ADC75C3E3488 /* KeysTests.swift in Sources */,
+				F270FAF2155BE1FF9730B5D6 /* SoundTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -297,6 +304,7 @@
 				EF7D5E21A0AB810E0A5CB70B /* GorillaRustApp.swift in Sources */,
 				5AAAFFC609CB865F782D3A15 /* Keypad.swift in Sources */,
 				5B95A7D3EE0CE33FACFA7F8E /* Keys.swift in Sources */,
+				8B715B21CBB251C8B99A82AF /* Sound.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

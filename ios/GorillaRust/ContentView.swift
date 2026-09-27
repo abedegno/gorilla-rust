@@ -4,12 +4,26 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var phase
     @State private var error: String?
     @FocusState private var focused: Bool
+    /// A plain Bool, so SwiftUI sees it change; MuteStore is only where it
+    /// is kept between launches.
+    @State private var muted = MuteStore(defaults: .standard).muted
 
     var body: some View {
         GeometryReader { geo in
             let landscape = geo.size.width > geo.size.height
             let game = GameView(running: phase == .active && error == nil) { error = $0 }
-            let pad = Keypad { Core.push($0) }
+            let pad = VStack(spacing: 8) {
+                Button(muted ? "Sound off" : "Sound on") {
+                    muted.toggle()
+                    var store = MuteStore(defaults: .standard)
+                    store.muted = muted
+                    Sound.apply(muted: muted)
+                }
+                .buttonStyle(.bordered)
+                .tint(.white)
+                .accessibilityValue(muted ? "off" : "on")
+                Keypad { Core.push($0) }
+            }
             Group {
                 if landscape {
                     HStack(spacing: 12) {
