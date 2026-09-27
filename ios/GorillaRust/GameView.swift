@@ -7,6 +7,11 @@ final class FrameView: UIView {
     private var link: CADisplayLink?
     var onError: ((String) -> Void)?
 
+    /// Whether to hash each frame into the accessibility value, which only
+    /// the UI tests read. Hashing a megabyte every frame costs battery, so
+    /// it is off unless a test launches the app with -UITestFrameDigest.
+    static let exposesDigest = ProcessInfo.processInfo.arguments.contains("-UITestFrameDigest")
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = .black
@@ -22,6 +27,9 @@ final class FrameView: UIView {
     func start() {
         guard link == nil else { return }
         let link = CADisplayLink(target: self, selector: #selector(tick))
+        // The game's waits keep their pace at any frame rate, and a 1990
+        // game gains nothing from 120 frames a second but a flatter battery.
+        link.preferredFrameRateRange = CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
         link.add(to: .main, forMode: .common)
         self.link = link
     }
@@ -41,7 +49,9 @@ final class FrameView: UIView {
     }
 
     private func show(_ frame: Core.Frame) {
-        accessibilityValue = String(FrameDigest.of(frame.pixels), radix: 16)
+        if Self.exposesDigest {
+            accessibilityValue = String(FrameDigest.of(frame.pixels), radix: 16)
+        }
         guard let provider = CGDataProvider(data: frame.pixels as CFData),
               let image = CGImage(
                   width: frame.width, height: frame.height,

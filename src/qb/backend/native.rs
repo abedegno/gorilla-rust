@@ -134,3 +134,9 @@ fn shift_char(c: char) -> char {
         _ => c,
     }
 }
+
+/// Where the next wait starts: now. This backend wakes within a slice of
+/// each deadline, so there is no lateness worth carrying.
+pub fn wait_origin(now: f64, _last_deadline: f64) -> f64 {
+    now
+}

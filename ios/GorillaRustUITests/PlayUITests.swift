@@ -22,6 +22,8 @@ final class PlayUITests: XCTestCase {
 
     func testAKeyOnTheKeypadEndsTheIntroEvenAfterRotating() {
         let app = XCUIApplication()
+        // The game view only publishes its frame digest when asked.
+        app.launchArguments = ["-UITestFrameDigest"]
         app.launch()
         let game = app.otherElements["game"]
         XCTAssertTrue(game.waitForExistence(timeout: 10))

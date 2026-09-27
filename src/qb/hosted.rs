@@ -64,6 +64,24 @@ impl<F: Fn() -> f64 + Unpin> Future for Until<F> {
     }
 }
 
+/// How late a wait may have ended and still have the next wait start from
+/// its deadline. A few frames' worth; anything later is an absence, such as
+/// the app being in the background, and is not made up.
+pub const CARRY_MS: f64 = 50.0;
+
+/// Where the next wait should start, given the last wait's deadline. A host
+/// that steps once a frame ends every wait up to a frame late; starting the
+/// next wait from the last deadline, not from now, stops a run of short
+/// waits from each losing a whole frame, which would slow the banana and
+/// the explosions down by a different amount on every display.
+pub fn paced_origin(now: f64, last_deadline: f64) -> f64 {
+    if last_deadline <= now && now - last_deadline <= CARRY_MS {
+        last_deadline
+    } else {
+        now
+    }
+}
+
 struct Frame {
     width: u32,
     height: u32,
@@ -167,6 +185,44 @@ mod tests {
     }
     fn set_clock(ms: f64) {
         CLOCK.with(|c| c.set(ms));
+    }
+
+    /// How many display frames `waits` waits of `wait_ms` take when the game
+    /// is only stepped once a frame, with or without pacing.
+    fn frames_for(waits: usize, wait_ms: f64, frame_ms: f64, paced: bool) -> usize {
+        let (mut now, mut last, mut frames) = (0.0, f64::NEG_INFINITY, 0);
+        for _ in 0..waits {
+            let origin = if paced { paced_origin(now, last) } else { now };
+            let until = origin + wait_ms;
+            last = until;
+            while now < until {
+                now += frame_ms;
+                frames += 1;
+            }
+        }
+        frames
+    }
+
+    #[test]
+    fn short_waits_keep_their_pace_on_a_60hz_display() {
+        // The explosion: 15 waits of 5 ms, 75 ms in all. Stepped once a
+        // frame, each wait alone would take a whole frame, 250 ms in all.
+        let frame = 1000.0 / 60.0;
+        assert_eq!(frames_for(15, 5.0, frame, false), 15);
+        let paced = frames_for(15, 5.0, frame, true);
+        assert!(paced <= 5, "paced, 15 short waits took {paced} frames");
+    }
+
+    #[test]
+    fn a_long_absence_is_not_made_up() {
+        // Back from the background, the next wait starts now rather than
+        // racing through everything that was missed.
+        assert_eq!(paced_origin(10_000.0, 100.0), 10_000.0);
+    }
+
+    #[test]
+    fn a_deadline_not_yet_reached_is_not_carried() {
+        assert_eq!(paced_origin(100.0, 120.0), 100.0);
     }
 
     #[test]
