@@ -1,4 +1,5 @@
 import AVFoundation
+import SwiftUI
 
 /// iOS mutes "ambient" sound in Silent mode, so with sound on the game plays
 /// as media does. Muted, it goes back to ambient, so a silent game never
@@ -27,16 +28,35 @@ enum Sound {
         Core.setMuted(muted)
     }
 
-    /// When a call or Siri ends, iOS may have closed the audio output;
-    /// reactivate the session and have the core reopen it.
+    /// Reactivate the session and have the core reopen its audio output,
+    /// which iOS may have closed during a call, Siri or a media reset.
+    static func resume() {
+        try? AVAudioSession.sharedInstance().setActive(true)
+        Core.reopenAudio()
+    }
+
+    /// Resume when an interruption ends, and when iOS resets its media
+    /// services. Coming back from the background resumes too (see
+    /// `AudioRecovery`), since iOS does not always say an interruption ended.
     static func observeInterruptions() {
         NotificationCenter.default.addObserver(
             forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
         ) { note in
             guard let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
                   AVAudioSession.InterruptionType(rawValue: raw) == .ended else { return }
-            try? AVAudioSession.sharedInstance().setActive(true)
-            Core.reopenAudio()
+            resume()
         }
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.mediaServicesWereResetNotification, object: nil, queue: .main
+        ) { _ in resume() }
+    }
+}
+
+/// When to reopen the audio output as the app's scene changes phase: on the
+/// way back from the background, where a call may have left it closed, but
+/// not for a glance at Control Centre, which would cut a tune short.
+enum AudioRecovery {
+    static func shouldReopen(from old: ScenePhase, to new: ScenePhase) -> Bool {
+        old == .background && new == .active
     }
 }

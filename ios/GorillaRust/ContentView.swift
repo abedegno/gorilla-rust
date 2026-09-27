@@ -54,6 +54,9 @@ struct ContentView: View {
             return .handled
         }
         .onAppear { focused = true }
+        .onChange(of: phase) { old, new in
+            if AudioRecovery.shouldReopen(from: old, to: new) { Sound.resume() }
+        }
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
     }
