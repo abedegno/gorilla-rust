@@ -1,6 +1,6 @@
 //! The title screen and the questions before the game.
 
-use super::Game;
+use super::{Branding, Game};
 use crate::qb::Result;
 
 /// The two horizontal border rows at one phase of the sparkle animation.
@@ -28,10 +28,16 @@ impl Game {
     /// The static part of Intro, split out so a fixture can be compared
     /// against it without the tune or the animated border.
     pub fn draw_intro_text(&mut self) {
+        let branding = self.branding;
         let q = &mut self.qb;
-        q.center(4, "Q B a s i c    G O R I L L A S");
+        match branding {
+            Branding::Original => q.center(4, "Q B a s i c    G O R I L L A S"),
+            Branding::Rust => q.center(4, "R u s t    G O R I L L A S"),
+        }
         q.color(7, None);
-        q.center(6, "Copyright (C) Microsoft Corporation 1990");
+        if branding == Branding::Original {
+            q.center(6, "Copyright (C) Microsoft Corporation 1990");
+        }
         q.center(8, "Your mission is to hit your opponent with the exploding");
         q.center(
             9,
@@ -177,7 +183,7 @@ impl Game {
 
 #[cfg(test)]
 mod tests {
-    use crate::game::Game;
+    use crate::game::{Branding, Game};
     use crate::qb::Qb;
 
     fn game_with_keys(keys: &str) -> Game {
@@ -360,5 +366,64 @@ mod tests {
         want.qb.color(4, Some(0));
         want.sparkle_frame(0);
         assert!(g.qb.screen.pixels == want.qb.screen.pixels);
+    }
+
+    /// One 16 pixel row of text cells on the 640 by 400 text screen.
+    fn text_row(g: &Game, row: usize) -> &[u8] {
+        let w = g.qb.screen.width as usize;
+        &g.qb.screen.pixels[(row - 1) * 16 * w..row * 16 * w]
+    }
+
+    /// The intro's text as the fixture test draws it, in a given branding.
+    fn intro_text(branding: Branding) -> Game {
+        let mut g = Game::new(Qb::headless(640, 350), 1);
+        g.branding = branding;
+        g.qb.screen_mode(0);
+        g.qb.color(15, Some(0));
+        g.qb.cls();
+        g.draw_intro_text();
+        g
+    }
+
+    #[test]
+    fn every_build_but_ios_shows_the_original_intro() {
+        assert_eq!(Branding::for_this_build(), Branding::Original);
+    }
+
+    #[test]
+    fn the_rust_intro_leaves_out_the_copyright_line() {
+        let rust = intro_text(Branding::Rust);
+        assert!(
+            text_row(&rust, 6).iter().all(|&p| p == 0),
+            "row 6 should be empty"
+        );
+        let original = intro_text(Branding::Original);
+        assert!(
+            text_row(&original, 6).iter().any(|&p| p != 0),
+            "the original has the line"
+        );
+    }
+
+    #[test]
+    fn the_rust_intro_is_retitled() {
+        let rust = intro_text(Branding::Rust);
+        let mut want = Game::new(Qb::headless(640, 350), 1);
+        want.qb.screen_mode(0);
+        want.qb.color(15, Some(0));
+        want.qb.cls();
+        want.qb.center(4, "R u s t    G O R I L L A S");
+        assert!(text_row(&rust, 4) == text_row(&want, 4));
+    }
+
+    #[test]
+    fn the_rust_intro_changes_nothing_else() {
+        let rust = intro_text(Branding::Rust);
+        let original = intro_text(Branding::Original);
+        for row in (1..=25).filter(|r| *r != 4 && *r != 6) {
+            assert!(
+                text_row(&rust, row) == text_row(&original, row),
+                "row {row} differs"
+            );
+        }
     }
 }

@@ -47,6 +47,26 @@ pub fn scl(n: f64) -> i32 {
     crate::qb::screen::cint(n)
 }
 
+/// Which intro the game shows. The App Store build is retitled and leaves
+/// out the original's copyright line, since it is published where the
+/// original's owner's name must not appear as if it were theirs. Every
+/// other build is the faithful port.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Branding {
+    Original,
+    Rust,
+}
+
+impl Branding {
+    pub fn for_this_build() -> Branding {
+        if cfg!(target_os = "ios") {
+            Branding::Rust
+        } else {
+            Branding::Original
+        }
+    }
+}
+
 pub struct Game {
     pub qb: Qb,
     pub rng: Rng,
@@ -63,6 +83,8 @@ pub struct Game {
     pub ban: [Sprite; 4],
     pub explosion_color: u8,
     pub back_color: u8,
+    /// Set from the build by `Game::new`; tests set it to draw either.
+    pub branding: Branding,
 }
 
 impl Game {
@@ -87,6 +109,7 @@ impl Game {
             ban: banana::sprites(),
             explosion_color: 2,
             back_color: 1,
+            branding: Branding::for_this_build(),
         }
     }
 
