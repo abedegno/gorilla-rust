@@ -184,3 +184,21 @@ jobs:
         run: |
           cargo clippy --lib --target aarch64-apple-ios-sim -- -D warnings
           cargo build --lib --target aarch64-apple-ios
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # The committed project must be what project.yml generates, so the
+      # two never drift apart.
+      - name: Check the project is generated from project.yml
+        run: |
+          (cd ios && xcodegen)
+          git diff --exit-code -- ios/GorillaRust.xcodeproj ios/GorillaRust/Info.plist
+
+      - name: Build the core and the app icon
+        run: ios/build-rust.sh debug
+
+      - name: Test the app in the Simulator
+        run: |
+          xcodebuild test -project ios/GorillaRust.xcodeproj -scheme GorillaRust \
+            -destination "id=$(ios/simulator.sh)" CODE_SIGNING_ALLOWED=NO
