@@ -6,6 +6,8 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-09-27
+
 ### Added
 
 - gorilla-rust is on crates.io: `cargo install gorilla-rust`. Each
@@ -113,7 +115,8 @@ First release. The game is complete and playable end to end.
 - Command line flags for the seed, speed, window scale and muting.
 - Tooling under `reference/` for capturing and comparing framebuffers.
 
-[Unreleased]: https://github.com/abedegno/gorilla-rust/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/abedegno/gorilla-rust/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.4.2
 [1.4.1]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.4.1
 [1.4.0]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.4.0
 [1.3.0]: https://github.com/abedegno/gorilla-rust/releases/tag/v1.3.0
