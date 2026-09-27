@@ -2,13 +2,13 @@
 
 For the maintainer. A release is a tag: pushing `vX.Y.Z` builds every
 platform, signs and notarizes the macOS binary, app and disk image,
-publishes the GitHub release, deploys the browser version, and updates
-the Homebrew tap. This page covers the setup that has to be done once,
+publishes the GitHub release, deploys the browser version, updates the
+Homebrew tap, and publishes the crate to crates.io. This page covers the setup that has to be done once,
 and how to check a change to the release without publishing anything.
 
 ## One-off setup
 
-Six repository secrets drive the release. Set each with
+Seven repository secrets drive the release. Set each with
 `gh secret set NAME -R abedegno/gorilla-rust`, which reads the value from
 standard input, so that it never lands in your shell history.
 
@@ -78,6 +78,21 @@ writes to.
    token.
 4. Put a reminder in your calendar for a week before it expires.
 
+### A crates.io token
+
+1. Verify the email address on your crates.io account; crates.io
+   refuses to publish until it is.
+2. At <https://crates.io/settings/tokens/new>, create a token named
+   `gorilla-rust releases` with only the `publish-new` and
+   `publish-update` scopes, limited to the crate `gorilla-rust`.
+3. `gh secret set CARGO_REGISTRY_TOKEN -R abedegno/gorilla-rust`, and
+   paste the token.
+4. If it expires, put a reminder in your calendar for a week before.
+
+The `crates-io` job builds the packaged crate without the token, and
+hands the token only to `cargo publish --no-verify`, so no dependency's
+build script can read it.
+
 ### The tap's README
 
     # abedegno/homebrew-tap
@@ -109,7 +124,8 @@ Download the macOS artifact and open the DMG to see what a user would get.
 
 Follow "Releasing" in `CONTRIBUTING.md`. After the tag's run, the
 `homebrew` job has pushed the new formula and cask, and installed both
-from the tap to check them.
+from the tap to check them, and the `crates-io` job has published the
+crate.
 
 ## When something expires
 
@@ -121,6 +137,13 @@ from the tap to check them.
 - **The tap token** (after its expiry): the `homebrew` job fails at "Push
   to the tap". Make a new token and replace `TAP_TOKEN`, then re-run the
   failed job from the run's page. Re-running is safe; see below.
+
+- **The crates.io token** (after its expiry, if it has one): the
+  `crates-io` job fails at "Publish". Make a new token and replace
+  `CARGO_REGISTRY_TOKEN`, then re-run the failed job.
+
+Re-running the `crates-io` job for a version crates.io already has
+stops after asking, since crates.io refuses a version twice.
 
 Re-running the `homebrew` job for a version the tap already has changes
 nothing: it only commits when the files differ. Re-running an older

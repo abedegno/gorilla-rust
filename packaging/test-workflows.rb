@@ -20,15 +20,19 @@ jobs.each do |name, job|
   end
 end
 
-# The signing secrets go only to the steps that use them. cargo runs
-# third-party build scripts, which must never see the certificate or the
-# notary key.
+# The secrets go only to the steps that use them. Building runs third-party
+# build scripts, which must never see a certificate, a notary key or a
+# registry token. The one cargo command allowed beside a secret is
+# `cargo publish --no-verify`, which uploads without building anything.
 secret = ->(env) { (env || {}).select { |_, v| v.to_s.include?("secrets.") }.keys }
 leaked = secret.call(jobs.fetch("macos")["env"])
 failures << "the macos job gives every step #{leaked.join(', ')}" unless leaked.empty?
 jobs.each do |name, job|
   (job["steps"] || []).each do |step|
-    next unless step["run"].to_s.include?("cargo ")
+    builds = step["run"].to_s.each_line.any? do |line|
+      line.include?("cargo ") && !line.strip.match?(/\Acargo publish --no-verify\b/)
+    end
+    next unless builds
     names = secret.call(step["env"])
     failures << "#{name}: '#{step['name']}' runs cargo with #{names.join(', ')}" unless names.empty?
   end
@@ -97,6 +101,36 @@ end
 # whether the submission is accepted or not.
 notarize = File.read(File.join(__dir__, "macos", "notarize.sh"))
 failures << "notarize.sh must remove its temporary file on every exit" unless notarize.match?(/^trap 'rm -f "\$result"' EXIT$/)
+
+# Publishing to crates.io cannot be undone, so the crates-io job runs only
+# for a real release: a tag push, after the GitHub release, never for a
+# pre-release, and only from the tag itself, not a ref a manual run chose.
+crates = jobs["crates-io"]
+if crates.nil?
+  failures << "there is no crates-io job"
+else
+  failures << "crates-io must run after the release job" unless Array(crates["needs"]).include?("release")
+  condition = crates["if"].to_s
+  failures << "crates-io must run only on a tag push" unless condition.include?("github.event_name == 'push'")
+  failures << "crates-io must skip pre-release tags" unless condition.include?("!contains(github.ref_name, '-')")
+  checkout = crates.fetch("steps").find { |s| s["uses"].to_s.start_with?("actions/checkout") }
+  failures << "crates-io must publish the tagged checkout itself" if checkout.nil? || checkout.dig("with", "ref")
+
+  # The token only where cargo publish needs it, and a re-run of a release
+  # already on crates.io goes no further than asking.
+  holders = all_steps.select { |_, s| (s["env"] || {}).values.any? { |v| v.to_s.include?("secrets.CARGO_REGISTRY_TOKEN") } }
+  publishing = holders.map { |name, s| [name, s["run"].to_s] }
+  unless publishing.size == 1 && publishing[0][0] == "crates-io" && publishing[0][1].include?("cargo publish --no-verify")
+    failures << "CARGO_REGISTRY_TOKEN must reach only the step that runs cargo publish --no-verify"
+  end
+  # --no-verify skips cargo's own check that the packaged crate builds, so
+  # a step without the token must make that check first.
+  verify = crates.fetch("steps").find { |s| s["run"].to_s.include?("cargo package") }
+  failures << "crates-io must build the packaged crate, without the token, before publishing" if verify.nil? || !secret.call(verify["env"]).empty?
+  failures << "crates-io must not give the token to every step" if (crates["env"] || {}).values.any? { |v| v.to_s.include?("secrets.") }
+  run = crates.fetch("steps").map { |s| s["run"].to_s }.join("\n")
+  failures << "crates-io must skip a version crates.io already has" unless run.include?("packaging/crate-published.sh")
+end
 
 if failures.empty?
   puts "workflows: ok"
