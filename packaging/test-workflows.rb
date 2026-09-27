@@ -143,6 +143,12 @@ else
   failures << "app-store must skip pre-release tags" unless store["if"].to_s.include?("!contains(github.ref_name, '-')")
   upload = store.fetch("steps").find { |s| s["name"] == "Upload to App Store Connect" }
   failures << "app-store must upload only on a tag push" unless upload && upload["if"].to_s.include?("github.event_name == 'push'")
+  # Xcode 16 and later look for profiles in their own folder, not the one
+  # older Xcodes used; a profile left only in the old one is never found.
+  import = store.fetch("steps").find { |s| s["name"] == "Import the certificate and the profile" }
+  unless import && import["run"].to_s.include?("Library/Developer/Xcode/UserData/Provisioning Profiles")
+    failures << "app-store must install the profile where Xcode 16 and later look for it"
+  end
 end
 
 if failures.empty?
