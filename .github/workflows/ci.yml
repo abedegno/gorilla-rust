@@ -84,6 +84,7 @@ jobs:
           packaging/test-workflows.sh
           packaging/homebrew/test-render.sh
           packaging/homebrew/test-tap-is-newer.sh
+          packaging/test-crate.sh
 
   msrv:
     name: Minimum supported Rust version
