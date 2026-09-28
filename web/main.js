@@ -68,6 +68,20 @@ async function main() {
   };
   showMute();
 
+  // Set once the game has loaded. Until then the button only records the
+  // choice, which start() picks up, so a tap while the game downloads is
+  // kept.
+  let setGameMuted = null;
+  // Page buttons must never hold keyboard focus, or Space and Enter meant
+  // for the game would press them instead.
+  muteButton.addEventListener('pointerdown', (e) => e.preventDefault());
+  muteButton.addEventListener('click', () => {
+    muted = !muted;
+    setGameMuted?.(muted);
+    storeMute(muted);
+    showMute();
+  });
+
   // Imported here rather than at the top of the file, so that a missing or
   // broken module still reaches the error message instead of stopping this
   // script before it runs.
@@ -81,6 +95,7 @@ async function main() {
     return;
   }
   const { start, push_key, set_muted, resume_audio, version } = wasm;
+  setGameMuted = set_muted;
 
   // From the wasm build itself, so the page names the build it is running.
   document.getElementById('version').textContent = `gorilla-rust ${version()}`;
@@ -102,16 +117,6 @@ async function main() {
     } catch (e) {
       showError(String(e));
     }
-  });
-
-  // Page buttons must never hold keyboard focus, or Space and Enter meant
-  // for the game would press them instead.
-  muteButton.addEventListener('pointerdown', (e) => e.preventDefault());
-  muteButton.addEventListener('click', () => {
-    muted = !muted;
-    set_muted(muted);
-    storeMute(muted);
-    showMute();
   });
 
   // On window, not the canvas, so the keyboard works whatever was clicked.
