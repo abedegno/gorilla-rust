@@ -12,6 +12,8 @@
 pub mod backend;
 pub mod fixture;
 pub mod font;
+#[cfg(any(test, target_os = "ios"))]
+pub mod hosted;
 pub mod input;
 pub mod screen;
 pub mod sound;
@@ -37,6 +39,8 @@ pub struct Qb {
     keys: VecDeque<char>,
     answers: VecDeque<char>,
     answering: bool,
+    /// The deadline of the last wait, for backends that pace waits.
+    last_deadline: f64,
 }
 
 impl Qb {
@@ -56,6 +60,7 @@ impl Qb {
             keys: VecDeque::new(),
             answers: VecDeque::new(),
             answering: false,
+            last_deadline: f64::NEG_INFINITY,
         }
     }
 
@@ -64,7 +69,7 @@ impl Qb {
         Qb::new(width, height, None, backend::Audio::new(true))
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(not(target_arch = "wasm32"), not(target_os = "ios")))]
     pub fn windowed(width: i32, height: i32, scale: usize) -> Qb {
         Qb::new(
             width,
@@ -127,14 +132,18 @@ impl Qb {
     /// of the machine. Here it is a real wait, scaled by `--speed`, that
     /// pumps while it waits.
     pub async fn rest(&mut self, secs: f64) -> Result<()> {
-        let until = timing::deadline_ms(backend::now_ms(), secs / self.speed);
+        let origin = backend::wait_origin(backend::now_ms(), self.last_deadline);
+        let until = timing::deadline_ms(origin, secs / self.speed);
+        self.last_deadline = until;
         self.wait_until(until).await
     }
 
     /// Wait `ms` of real time, pumping as it goes. Not scaled by `--speed`:
     /// this is how long a tune sounds, which the speed never changed.
     pub async fn wait_ms(&mut self, ms: f64) -> Result<()> {
-        let until = timing::deadline_ms(backend::now_ms(), ms / 1000.0);
+        let origin = backend::wait_origin(backend::now_ms(), self.last_deadline);
+        let until = timing::deadline_ms(origin, ms / 1000.0);
+        self.last_deadline = until;
         self.wait_until(until).await
     }
 
