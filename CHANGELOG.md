@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- In the browser version, a tap on the sound button while the game is
+  still loading is kept and remembered, instead of being lost.
+
 ## [1.5.0] - 2026-09-28
 
 ### Added
