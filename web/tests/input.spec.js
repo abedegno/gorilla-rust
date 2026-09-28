@@ -57,6 +57,26 @@ test('the mute choice is remembered', async ({ page }) => {
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('the mute button works while the game is still loading', async ({ page }) => {
+  // On the live site the game takes a moment to download; a click on the
+  // button in that moment must not be lost.
+  let release;
+  const held = new Promise((resolve) => (release = resolve));
+  await page.route('**/pkg/*.wasm', async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.goto('index.html?seed=1');
+  await page.click('#mute');
+  await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
+  // The reload below abandons the held download, so its late continue()
+  // has nothing left to answer.
+  release();
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+  await page.goto('index.html?seed=1');
+  await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('Backspace and Space stay in the game', async ({ page }) => {
   // A short viewport, so the page could scroll if Space were let through.
   await page.setViewportSize({ width: 800, height: 300 });
