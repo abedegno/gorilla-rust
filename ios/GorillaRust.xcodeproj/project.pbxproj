@@ -1,0 +1,620 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1F318C34A8F47FB851F18736 /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2396D11626D15E578F0AF05F /* GameView.swift */; };
+		540391CBB38996B4F424E0F4 /* FrameDigestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABAD845C2692089C3CFB61DE /* FrameDigestTests.swift */; };
+		5AAAFFC609CB865F782D3A15 /* Keypad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76E37A6B6E83BF77A2522953 /* Keypad.swift */; };
+		5B95A7D3EE0CE33FACFA7F8E /* Keys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 186EBE58E9054E70E2023575 /* Keys.swift */; };
+		6B2DA3EDDA1FE61C90184B02 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D16B4C4007A757B26BDC5AF1 /* Assets.xcassets */; };
+		6C409B288D389326439E8D8B /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 70EDDF92E61A435B84138126 /* AudioToolbox.framework */; };
+		79E550821D8FA0D25EF17825 /* PlayUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452F19852F25FB518041081B /* PlayUITests.swift */; };
+		8B715B21CBB251C8B99A82AF /* Sound.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1C1BE5C79C60764DA7EB8E /* Sound.swift */; };
+		97846019D89BE535E1993B7D /* Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BE8A4F75ED51D21C8B44D90 /* Core.swift */; };
+		9AF083EDD7E70E6645E18C31 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0813AD72A1CD0C2E8D43AC2 /* CoreAudio.framework */; };
+		A6908544F09C9D125284A15D /* PrivacyManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 431E3A3A567665F03D9743F8 /* PrivacyManifestTests.swift */; };
+		A69B0EC4394AE0187502926B /* CoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C6DACC97BEA4B50EAA4DCA /* CoreTests.swift */; };
+		B80005E8B189A559B622A83B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756446BA2312D17136FB4557 /* ContentView.swift */; };
+		D07A966531927B6CF5943AFB /* AVFAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 724F8E44198E4EFE0DD027AC /* AVFAudio.framework */; };
+		D539A001E271175E501DFBA1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DF20963FE3248136802D1C38 /* PrivacyInfo.xcprivacy */; };
+		D9C5D8DB532C478CE3F02303 /* HardwareKeysTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC830C5ED7D32292566E74FC /* HardwareKeysTests.swift */; };
+		DF520DF9AD89CCB547F59D2A /* RecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5FDC22218DCA138B912EE41 /* RecoveryTests.swift */; };
+		EB050678ACEEFC0B02558BF9 /* GorillaRust.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = BEDF2909EE2EB6B6544DB4B6 /* GorillaRust.xcframework */; };
+		EB3D7C07F2BD456D3235E68C /* FrameDigest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB628DD8294E495C711220A /* FrameDigest.swift */; };
+		EDE1984FA864ADC75C3E3488 /* KeysTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD9DBDDD6A55CC0005F5392C /* KeysTests.swift */; };
+		EF7D5E21A0AB810E0A5CB70B /* GorillaRustApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9DDBA159164CF60F1FF1CE0 /* GorillaRustApp.swift */; };
+		F270FAF2155BE1FF9730B5D6 /* SoundTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20E6F03024D8E88525F2361D /* SoundTests.swift */; };
+		FF82BB9EAB46835BCD2927C4 /* LaunchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21D35D22E0D8866EFE4FBD73 /* LaunchUITests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AC80D365F288E8ED024FCE80 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CC21179E78F60AE6A39F5EF5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0F8953268B693AA353A32968;
+			remoteInfo = GorillaRust;
+		};
+		CE6F921B92B6A5C728CF7AFD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CC21179E78F60AE6A39F5EF5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0F8953268B693AA353A32968;
+			remoteInfo = GorillaRust;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		186EBE58E9054E70E2023575 /* Keys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keys.swift; sourceTree = "<group>"; };
+		20E6F03024D8E88525F2361D /* SoundTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundTests.swift; sourceTree = "<group>"; };
+		21D35D22E0D8866EFE4FBD73 /* LaunchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchUITests.swift; sourceTree = "<group>"; };
+		2396D11626D15E578F0AF05F /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
+		31C6DACC97BEA4B50EAA4DCA /* CoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTests.swift; sourceTree = "<group>"; };
+		431E3A3A567665F03D9743F8 /* PrivacyManifestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyManifestTests.swift; sourceTree = "<group>"; };
+		452F19852F25FB518041081B /* PlayUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayUITests.swift; sourceTree = "<group>"; };
+		4A87193D3F338BFF4DAA7B34 /* GorillaRust.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GorillaRust.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D09425B9E753B870012441F /* Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
+		5BE8A4F75ED51D21C8B44D90 /* Core.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core.swift; sourceTree = "<group>"; };
+		70EDDF92E61A435B84138126 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		724F8E44198E4EFE0DD027AC /* AVFAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFAudio.framework; path = System/Library/Frameworks/AVFAudio.framework; sourceTree = SDKROOT; };
+		756446BA2312D17136FB4557 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		76E37A6B6E83BF77A2522953 /* Keypad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keypad.swift; sourceTree = "<group>"; };
+		7AB628DD8294E495C711220A /* FrameDigest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameDigest.swift; sourceTree = "<group>"; };
+		ABAD845C2692089C3CFB61DE /* FrameDigestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameDigestTests.swift; sourceTree = "<group>"; };
+		AD9DBDDD6A55CC0005F5392C /* KeysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysTests.swift; sourceTree = "<group>"; };
+		B802672B7E196200081BC7D7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		BEDF2909EE2EB6B6544DB4B6 /* GorillaRust.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = GorillaRust.xcframework; sourceTree = "<group>"; };
+		C5FDC22218DCA138B912EE41 /* RecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryTests.swift; sourceTree = "<group>"; };
+		C9DDBA159164CF60F1FF1CE0 /* GorillaRustApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GorillaRustApp.swift; sourceTree = "<group>"; };
+		D0813AD72A1CD0C2E8D43AC2 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		D16B4C4007A757B26BDC5AF1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D51BA5F180CB9629FB9F544F /* GorillaRustUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GorillaRustUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DF20963FE3248136802D1C38 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		EBF9CF55E5662C264B559D16 /* GorillaRustTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GorillaRustTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB1C1BE5C79C60764DA7EB8E /* Sound.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sound.swift; sourceTree = "<group>"; };
+		FC830C5ED7D32292566E74FC /* HardwareKeysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareKeysTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		ADAE54EB0F42BAE72E5ABF3C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EB050678ACEEFC0B02558BF9 /* GorillaRust.xcframework in Frameworks */,
+				6C409B288D389326439E8D8B /* AudioToolbox.framework in Frameworks */,
+				9AF083EDD7E70E6645E18C31 /* CoreAudio.framework in Frameworks */,
+				D07A966531927B6CF5943AFB /* AVFAudio.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3F4113CE56BC26B4E0E55EFE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				70EDDF92E61A435B84138126 /* AudioToolbox.framework */,
+				724F8E44198E4EFE0DD027AC /* AVFAudio.framework */,
+				D0813AD72A1CD0C2E8D43AC2 /* CoreAudio.framework */,
+				BEDF2909EE2EB6B6544DB4B6 /* GorillaRust.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		4AC24988B00C0473B7BAEEA9 /* GorillaRustTests */ = {
+			isa = PBXGroup;
+			children = (
+				31C6DACC97BEA4B50EAA4DCA /* CoreTests.swift */,
+				ABAD845C2692089C3CFB61DE /* FrameDigestTests.swift */,
+				FC830C5ED7D32292566E74FC /* HardwareKeysTests.swift */,
+				AD9DBDDD6A55CC0005F5392C /* KeysTests.swift */,
+				431E3A3A567665F03D9743F8 /* PrivacyManifestTests.swift */,
+				C5FDC22218DCA138B912EE41 /* RecoveryTests.swift */,
+				20E6F03024D8E88525F2361D /* SoundTests.swift */,
+			);
+			path = GorillaRustTests;
+			sourceTree = "<group>";
+		};
+		7476FB40BDEBCB945088904C = {
+			isa = PBXGroup;
+			children = (
+				D949E15BBA33EC920922FFE2 /* GorillaRust */,
+				4AC24988B00C0473B7BAEEA9 /* GorillaRustTests */,
+				E03BF05464CFF6B8F2CF1B29 /* GorillaRustUITests */,
+				3F4113CE56BC26B4E0E55EFE /* Frameworks */,
+				C97B36E83A1A9D737DC33350 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C97B36E83A1A9D737DC33350 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4A87193D3F338BFF4DAA7B34 /* GorillaRust.app */,
+				EBF9CF55E5662C264B559D16 /* GorillaRustTests.xctest */,
+				D51BA5F180CB9629FB9F544F /* GorillaRustUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D949E15BBA33EC920922FFE2 /* GorillaRust */ = {
+			isa = PBXGroup;
+			children = (
+				D16B4C4007A757B26BDC5AF1 /* Assets.xcassets */,
+				4D09425B9E753B870012441F /* Bridging-Header.h */,
+				756446BA2312D17136FB4557 /* ContentView.swift */,
+				5BE8A4F75ED51D21C8B44D90 /* Core.swift */,
+				7AB628DD8294E495C711220A /* FrameDigest.swift */,
+				2396D11626D15E578F0AF05F /* GameView.swift */,
+				C9DDBA159164CF60F1FF1CE0 /* GorillaRustApp.swift */,
+				B802672B7E196200081BC7D7 /* Info.plist */,
+				76E37A6B6E83BF77A2522953 /* Keypad.swift */,
+				186EBE58E9054E70E2023575 /* Keys.swift */,
+				DF20963FE3248136802D1C38 /* PrivacyInfo.xcprivacy */,
+				FB1C1BE5C79C60764DA7EB8E /* Sound.swift */,
+			);
+			path = GorillaRust;
+			sourceTree = "<group>";
+		};
+		E03BF05464CFF6B8F2CF1B29 /* GorillaRustUITests */ = {
+			isa = PBXGroup;
+			children = (
+				21D35D22E0D8866EFE4FBD73 /* LaunchUITests.swift */,
+				452F19852F25FB518041081B /* PlayUITests.swift */,
+			);
+			path = GorillaRustUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0F8953268B693AA353A32968 /* GorillaRust */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 85CD9EC993CB98D756C0A42F /* Build configuration list for PBXNativeTarget "GorillaRust" */;
+			buildPhases = (
+				8D1D747BC90CFBDDB57B5CD0 /* Sources */,
+				5C9DE0198F8C56EF211423F2 /* Resources */,
+				ADAE54EB0F42BAE72E5ABF3C /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GorillaRust;
+			packageProductDependencies = (
+			);
+			productName = GorillaRust;
+			productReference = 4A87193D3F338BFF4DAA7B34 /* GorillaRust.app */;
+			productType = "com.apple.product-type.application";
+		};
+		52BB11902CA5B4DBD9CC1BB9 /* GorillaRustTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DC849935BC3466EE7470545D /* Build configuration list for PBXNativeTarget "GorillaRustTests" */;
+			buildPhases = (
+				67043523EA6EE9558EA679A3 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0EE02057438FE7A5E9B2FAE8 /* PBXTargetDependency */,
+			);
+			name = GorillaRustTests;
+			packageProductDependencies = (
+			);
+			productName = GorillaRustTests;
+			productReference = EBF9CF55E5662C264B559D16 /* GorillaRustTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		9C396E290D2F9E0DC6BD8738 /* GorillaRustUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ABD450A1F9FB54A3C76850BE /* Build configuration list for PBXNativeTarget "GorillaRustUITests" */;
+			buildPhases = (
+				74BE059DDB3BD005BABCE233 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FFFF800D9D9589CE18F52104 /* PBXTargetDependency */,
+			);
+			name = GorillaRustUITests;
+			packageProductDependencies = (
+			);
+			productName = GorillaRustUITests;
+			productReference = D51BA5F180CB9629FB9F544F /* GorillaRustUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CC21179E78F60AE6A39F5EF5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					0F8953268B693AA353A32968 = {
+						DevelopmentTeam = 9ZPNXSV9HU;
+					};
+					52BB11902CA5B4DBD9CC1BB9 = {
+						DevelopmentTeam = 9ZPNXSV9HU;
+					};
+					9C396E290D2F9E0DC6BD8738 = {
+						DevelopmentTeam = 9ZPNXSV9HU;
+						TestTargetID = 0F8953268B693AA353A32968;
+					};
+				};
+			};
+			buildConfigurationList = AAC26FC108E47137741209A7 /* Build configuration list for PBXProject "GorillaRust" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 7476FB40BDEBCB945088904C;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C97B36E83A1A9D737DC33350 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0F8953268B693AA353A32968 /* GorillaRust */,
+				52BB11902CA5B4DBD9CC1BB9 /* GorillaRustTests */,
+				9C396E290D2F9E0DC6BD8738 /* GorillaRustUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5C9DE0198F8C56EF211423F2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6B2DA3EDDA1FE61C90184B02 /* Assets.xcassets in Resources */,
+				D539A001E271175E501DFBA1 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		67043523EA6EE9558EA679A3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A69B0EC4394AE0187502926B /* CoreTests.swift in Sources */,
+				540391CBB38996B4F424E0F4 /* FrameDigestTests.swift in Sources */,
+				D9C5D8DB532C478CE3F02303 /* HardwareKeysTests.swift in Sources */,
+				EDE1984FA864ADC75C3E3488 /* KeysTests.swift in Sources */,
+				A6908544F09C9D125284A15D /* PrivacyManifestTests.swift in Sources */,
+				DF520DF9AD89CCB547F59D2A /* RecoveryTests.swift in Sources */,
+				F270FAF2155BE1FF9730B5D6 /* SoundTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		74BE059DDB3BD005BABCE233 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF82BB9EAB46835BCD2927C4 /* LaunchUITests.swift in Sources */,
+				79E550821D8FA0D25EF17825 /* PlayUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8D1D747BC90CFBDDB57B5CD0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B80005E8B189A559B622A83B /* ContentView.swift in Sources */,
+				97846019D89BE535E1993B7D /* Core.swift in Sources */,
+				EB3D7C07F2BD456D3235E68C /* FrameDigest.swift in Sources */,
+				1F318C34A8F47FB851F18736 /* GameView.swift in Sources */,
+				EF7D5E21A0AB810E0A5CB70B /* GorillaRustApp.swift in Sources */,
+				5AAAFFC609CB865F782D3A15 /* Keypad.swift in Sources */,
+				5B95A7D3EE0CE33FACFA7F8E /* Keys.swift in Sources */,
+				8B715B21CBB251C8B99A82AF /* Sound.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0EE02057438FE7A5E9B2FAE8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0F8953268B693AA353A32968 /* GorillaRust */;
+			targetProxy = CE6F921B92B6A5C728CF7AFD /* PBXContainerItemProxy */;
+		};
+		FFFF800D9D9589CE18F52104 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0F8953268B693AA353A32968 /* GorillaRust */;
+			targetProxy = AC80D365F288E8ED024FCE80 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1AC990C31007C8FEFEE284F1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 9ZPNXSV9HU;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		516264FF1F0253A5EF334D15 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = uk.org.jonwilliams.GorillaRustUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GorillaRust;
+			};
+			name = Release;
+		};
+		59BA4BA83908E919B4A5EEA5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = uk.org.jonwilliams.GorillaRustUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GorillaRust;
+			};
+			name = Debug;
+		};
+		800CA8B65BBC9D34FB00B4EF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = uk.org.jonwilliams.GorillaRustTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GorillaRust.app/GorillaRust";
+			};
+			name = Release;
+		};
+		8B817026D7FA81A1AF54F56C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 9ZPNXSV9HU;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BB8ADCDFF062E9C023D0A775 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				INFOPLIST_FILE = GorillaRust/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.jonwilliams.gorilla-rust";
+				PRODUCT_NAME = GorillaRust;
+				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "GorillaRust/Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		DF434A7157168C3F6E092306 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				INFOPLIST_FILE = GorillaRust/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.jonwilliams.gorilla-rust";
+				PRODUCT_NAME = GorillaRust;
+				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "GorillaRust/Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F260E1214E6D63C756AFFF88 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = uk.org.jonwilliams.GorillaRustTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GorillaRust.app/GorillaRust";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		85CD9EC993CB98D756C0A42F /* Build configuration list for PBXNativeTarget "GorillaRust" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB8ADCDFF062E9C023D0A775 /* Debug */,
+				DF434A7157168C3F6E092306 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AAC26FC108E47137741209A7 /* Build configuration list for PBXProject "GorillaRust" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8B817026D7FA81A1AF54F56C /* Debug */,
+				1AC990C31007C8FEFEE284F1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		ABD450A1F9FB54A3C76850BE /* Build configuration list for PBXNativeTarget "GorillaRustUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				59BA4BA83908E919B4A5EEA5 /* Debug */,
+				516264FF1F0253A5EF334D15 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DC849935BC3466EE7470545D /* Build configuration list for PBXNativeTarget "GorillaRustTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F260E1214E6D63C756AFFF88 /* Debug */,
+				800CA8B65BBC9D34FB00B4EF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CC21179E78F60AE6A39F5EF5 /* Project object */;
+}

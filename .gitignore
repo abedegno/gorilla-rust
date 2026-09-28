@@ -20,3 +20,8 @@ mutants.out*/
 /web/node_modules/
 /web/test-results/
 /web/playwright-report/
+
+# iOS build output: the core's xcframework and the icon drawn from the game
+/ios/GorillaRust.xcframework/
+/ios/GorillaRust/Assets.xcassets/AppIcon.appiconset/icon-1024.png
+/ios/build/
