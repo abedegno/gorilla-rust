@@ -69,8 +69,10 @@ test('the mute button works while the game is still loading', async ({ page }) =
   await page.goto('index.html?seed=1');
   await page.click('#mute');
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
+  // The reload below abandons the held download, so its late continue()
+  // has nothing left to answer.
   release();
-  await page.unroute('**/pkg/*.wasm');
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
   await page.goto('index.html?seed=1');
   await expect(page.locator('#mute')).toHaveAttribute('aria-pressed', 'true');
 });
