@@ -6,6 +6,13 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Gorilla Rust for iPhone and iPad: the same game as a native app, with
+  the keypad from the browser version, hardware keyboard support, both
+  orientations, and sound in Silent mode. Its intro is retitled Rust
+  GORILLAS.
+
 ## [1.4.2] - 2026-09-27
 
 ### Added

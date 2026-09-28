@@ -83,7 +83,7 @@ jobs:
       - name: Assemble the site
         run: |
           mkdir -p _site
-          cp web/index.html web/style.css web/main.js _site/
+          cp web/index.html web/style.css web/main.js web/privacy.html _site/
           cp -R web/pkg _site/pkg
 
       - uses: actions/upload-pages-artifact@v4

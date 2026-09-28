@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0EE147530426B43973BBF3A1 /* ScreenshotUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AA96579DFA11072609555C3 /* ScreenshotUITests.swift */; };
 		1F318C34A8F47FB851F18736 /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2396D11626D15E578F0AF05F /* GameView.swift */; };
 		540391CBB38996B4F424E0F4 /* FrameDigestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABAD845C2692089C3CFB61DE /* FrameDigestTests.swift */; };
 		5AAAFFC609CB865F782D3A15 /* Keypad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76E37A6B6E83BF77A2522953 /* Keypad.swift */; };
@@ -54,6 +55,7 @@
 		20E6F03024D8E88525F2361D /* SoundTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundTests.swift; sourceTree = "<group>"; };
 		21D35D22E0D8866EFE4FBD73 /* LaunchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchUITests.swift; sourceTree = "<group>"; };
 		2396D11626D15E578F0AF05F /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
+		2AA96579DFA11072609555C3 /* ScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotUITests.swift; sourceTree = "<group>"; };
 		31C6DACC97BEA4B50EAA4DCA /* CoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTests.swift; sourceTree = "<group>"; };
 		431E3A3A567665F03D9743F8 /* PrivacyManifestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyManifestTests.swift; sourceTree = "<group>"; };
 		452F19852F25FB518041081B /* PlayUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayUITests.swift; sourceTree = "<group>"; };
@@ -165,6 +167,7 @@
 			children = (
 				21D35D22E0D8866EFE4FBD73 /* LaunchUITests.swift */,
 				452F19852F25FB518041081B /* PlayUITests.swift */,
+				2AA96579DFA11072609555C3 /* ScreenshotUITests.swift */,
 			);
 			path = GorillaRustUITests;
 			sourceTree = "<group>";
@@ -302,6 +305,7 @@
 			files = (
 				FF82BB9EAB46835BCD2927C4 /* LaunchUITests.swift in Sources */,
 				79E550821D8FA0D25EF17825 /* PlayUITests.swift in Sources */,
+				0EE147530426B43973BBF3A1 /* ScreenshotUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

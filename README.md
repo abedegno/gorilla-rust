@@ -69,6 +69,9 @@ brew install abedegno/tap/gorilla-rust      # the gorilla-rust command
 brew install --cask abedegno/tap/gorillas   # macOS: Gorillas.app, in Applications
 ```
 
+On iPhone and iPad, Gorilla Rust is on the App Store (once Apple has
+approved it).
+
 Or download from [Releases](https://github.com/abedegno/gorilla-rust/releases):
 
 - **macOS:** `Gorillas-<version>.dmg`. Open it and drag Gorillas to
