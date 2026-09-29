@@ -56,7 +56,7 @@ jobs:
         id: fingerprint
         run: echo "wasm_sha=$(sha256sum web/pkg/gorillas_bg.wasm | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -127,7 +127,7 @@ jobs:
           echo "::error::The site was still not serving this build after five minutes."
           exit 1
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
