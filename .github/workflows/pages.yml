@@ -100,7 +100,7 @@ jobs:
       page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   # The build job tests the page before it is deployed. This tests what
   # actually went live: the same suite, pointed at the public URL.
