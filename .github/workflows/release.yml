@@ -443,7 +443,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       # Pinned to a commit: Homebrew publishes this action only on main.
-      - uses: Homebrew/actions/setup-homebrew@e99025eb970cfa124b8284a35463d87426917478 # main, 2026-09-25
+      - uses: Homebrew/actions/setup-homebrew@eb02c69dbabdb66ff183c614f4ce7ab3c077592c # main, 2026-09-25
 
       - name: Install from the tap
         run: |
