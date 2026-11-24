@@ -27,7 +27,7 @@ path = "src/main.rs"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rodio = "0.22"
-pollster = "0.4"
+pollster = "1.0"
 
 # The desktop window. iOS draws through the app that hosts the core.
 [target.'cfg(all(not(target_arch = "wasm32"), not(target_os = "ios")))'.dependencies]
